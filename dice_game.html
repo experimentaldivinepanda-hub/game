@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP & SG's Game 🎲</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09060a;
+    --rose: #d4526e;
+    --gold: #c89a52;
+    --cream: #f0e6d8;
+    --muted: #6b4a5a;
+    --deep: #1f0d18;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: 
+      radial-gradient(ellipse at 25% 25%, rgba(212,82,110,0.15) 0%, transparent 55%),
+      radial-gradient(ellipse at 75% 75%, rgba(200,154,82,0.1) 0%, transparent 55%),
+      radial-gradient(ellipse at 50% 50%, rgba(100,20,50,0.2) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 2.8rem;
+    position: relative;
+  }
+
+  .pp-kk {
+    font-size: clamp(2.8rem, 7vw, 4.5rem);
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--rose), var(--gold), var(--rose));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+    line-height: 1.1;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .heart-divider {
+    font-size: 1rem;
+    margin: 0.4rem 0;
+    opacity: 0.6;
+    letter-spacing: 8px;
+  }
+
+  .subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.28em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+
+  /* DICE */
+  .dice-area {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .die-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .die-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .die {
+    width: 148px;
+    height: 148px;
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    text-align: center;
+    padding: 1.2rem;
+    line-height: 1.4;
+    position: relative;
+    transition: transform 0.15s;
+    user-select: none;
+  }
+
+  .die-place {
+    background: linear-gradient(145deg, #2d0f1e, #1a0812);
+    border: 1px solid rgba(212,82,110,0.35);
+    box-shadow: 
+      0 0 60px rgba(212,82,110,0.1),
+      inset 0 1px 0 rgba(212,82,110,0.2),
+      inset 0 -1px 0 rgba(0,0,0,0.5);
+    color: #e8889a;
+  }
+
+  .die-action {
+    background: linear-gradient(145deg, #1e1508, #110e04);
+    border: 1px solid rgba(200,154,82,0.35);
+    box-shadow: 
+      0 0 60px rgba(200,154,82,0.08),
+      inset 0 1px 0 rgba(200,154,82,0.2),
+      inset 0 -1px 0 rgba(0,0,0,0.5);
+    color: #d4b06a;
+  }
+
+  .die.rolling {
+    animation: tumble 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+
+  @keyframes tumble {
+    0%   { transform: rotate(0deg) scale(1); }
+    15%  { transform: rotate(-20deg) scale(0.88); }
+    35%  { transform: rotate(25deg) scale(1.06); }
+    55%  { transform: rotate(-12deg) scale(0.94); }
+    75%  { transform: rotate(8deg) scale(1.03); }
+    90%  { transform: rotate(-3deg) scale(0.99); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  .die-corner {
+    position: absolute;
+    bottom: 9px; right: 11px;
+    display: flex; gap: 3px;
+  }
+  .dot { width: 4px; height: 4px; border-radius: 50%; opacity: 0.25; }
+  .die-place .dot { background: var(--rose); }
+  .die-action .dot { background: var(--gold); }
+
+  .connector {
+    font-size: 2rem;
+    color: var(--muted);
+    opacity: 0.35;
+    font-style: italic;
+  }
+
+  /* RESULT */
+  .result-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(212,82,110,0.05), rgba(200,154,82,0.05));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 1.6rem 2.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 440px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(212,82,110,0.03), transparent, rgba(200,154,82,0.03));
+    border-radius: 20px;
+  }
+
+  .result-text {
+    font-size: 1.6rem;
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--cream);
+    opacity: 0;
+    transition: opacity 0.5s 0.45s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .result-text.visible { opacity: 1; }
+
+  .result-text .action-word {
+    color: #d4b06a;
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  .result-text .place-word {
+    color: #e8889a;
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  .result-text .starter {
+    color: rgba(240,230,216,0.5);
+    font-size: 1rem;
+    display: block;
+    font-style: normal;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+
+  /* BUTTON */
+  .roll-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    padding: 1rem 3.5rem;
+    border: 1px solid rgba(212,82,110,0.45);
+    background: transparent;
+    color: var(--rose);
+    border-radius: 60px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .roll-btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(212,82,110,0.18), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .roll-btn:hover::after { opacity: 1; }
+  .roll-btn:hover {
+    border-color: rgba(212,82,110,0.8);
+    color: var(--cream);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(212,82,110,0.18);
+  }
+  .roll-btn:active { transform: translateY(0); }
+  .roll-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 2.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-align: center;
+    opacity: 0.4;
+  }
+
+  /* PARTICLES */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    animation: floatUp 1.4s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) translateX(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-150px) translateX(var(--drift)) scale(0); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="pp-kk">PP & SG</div>
+  <div class="heart-divider">♡ &nbsp; ♡ &nbsp; ♡</div>
+  <div class="subtitle">your little secret game &nbsp;·&nbsp; pp & sg only</div>
+</div>
+
+<div class="dice-area">
+  <div class="die-wrapper">
+    <div class="die-label">the place</div>
+    <div class="die die-place" id="die-place">
+      <span id="place-text">✦</span>
+      <div class="die-corner">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">×</div>
+
+  <div class="die-wrapper">
+    <div class="die-label">the move</div>
+    <div class="die die-action" id="die-action">
+      <span id="action-text">✦</span>
+      <div class="die-corner">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="result-card">
+  <div class="result-text" id="result-text">
+    <span class="starter">tonight you shall —</span>
+    press roll to begin
+  </div>
+</div>
+
+<button class="roll-btn" id="roll-btn" onclick="roll()">✦ &nbsp; Roll &nbsp; ✦</button>
+
+<p class="footer">pp & sg only &nbsp;·&nbsp; eyes off 👁</p>
+
+<script>
+const places = [
+  "her neck", "her ears", "her lips", "her chest",
+  "her waist", "her feet", "her inner wrist", "her collarbone",
+  "her lower back", "behind her knee", "her thighs",
+  "her stomach", "her shoulders", "her fingertips"
+];
+
+const actions = [
+  "Kiss slowly", "Lick softly", "Blow gently on",
+  "Bite gently", "Massage deeply", "Trace your fingers along",
+  "Press your lips against", "Breathe warmly on",
+  "Nuzzle your face into", "Run your tongue along",
+  "Suck gently on", "Caress with both hands",
+  "Tease with your fingertips", "Leave a mark on"
+];
+
+const placeEl = document.getElementById('place-text');
+const actionEl = document.getElementById('action-text');
+const resultEl = document.getElementById('result-text');
+const btn = document.getElementById('roll-btn');
+const diePlaceEl = document.getElementById('die-place');
+const dieActionEl = document.getElementById('die-action');
+
+let rolling = false;
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function spawnParticles() {
+  const colors = ['#d4526e','#c89a52','#f0e6d8','#e8889a','#d4b06a'];
+  for (let i = 0; i < 24; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 3 + Math.random() * 7;
+      const drift = (Math.random() - 0.5) * 80;
+      p.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${25 + Math.random()*50}vw;
+        top:${35 + Math.random()*30}vh;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        --drift:${drift}px;
+        animation-duration:${1+Math.random()*0.8}s;
+        animation-delay:${Math.random()*0.4}s;
+      `;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 25);
+  }
+}
+
+function roll() {
+  if (rolling) return;
+  rolling = true;
+  btn.disabled = true;
+  resultEl.classList.remove('visible');
+
+  let ticks = 0;
+  const maxTicks = 20;
+  const interval = setInterval(() => {
+    placeEl.textContent = pick(places);
+    actionEl.textContent = pick(actions);
+    ticks++;
+    if (ticks >= maxTicks) {
+      clearInterval(interval);
+
+      const finalPlace = pick(places);
+      const finalAction = pick(actions);
+      placeEl.textContent = finalPlace;
+      actionEl.textContent = finalAction;
+
+      diePlaceEl.classList.add('rolling');
+      dieActionEl.classList.add('rolling');
+      setTimeout(() => {
+        diePlaceEl.classList.remove('rolling');
+        dieActionEl.classList.remove('rolling');
+      }, 720);
+
+      resultEl.innerHTML = `
+        <span class="starter">tonight you shall —</span>
+        <span class="action-word">${finalAction}</span> <span class="place-word">${finalPlace}</span>
+      `;
+      resultEl.classList.add('visible');
+      spawnParticles();
+
+      rolling = false;
+      btn.disabled = false;
+      btn.textContent = '✦   Roll Again   ✦';
+    }
+  }, 55);
+}
+
+resultEl.classList.add('visible');
+</script>
+</body>
+</html>

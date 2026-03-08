@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP & SG's Secret 🎲</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09060a;
+    --rose: #d4526e;
+    --gold: #c89a52;
+    --purple: #9b6db5;
+    --teal: #4ea8a0;
+    --cream: #f0e6d8;
+    --muted: #6b4a5a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem 3rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 20%, rgba(212,82,110,0.13) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(200,154,82,0.09) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(155,109,181,0.08) 0%, transparent 45%),
+      radial-gradient(ellipse at 20% 80%, rgba(78,168,160,0.07) 0%, transparent 45%);
+    pointer-events: none;
+  }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 2.5rem; }
+
+  .pp-sg {
+    font-size: clamp(2.8rem, 7vw, 4.5rem);
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--rose), var(--gold), var(--rose));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+    line-height: 1.1;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .heart-divider { font-size: 1rem; margin: 0.4rem 0; opacity: 0.5; letter-spacing: 8px; }
+  .subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem; letter-spacing: 0.28em;
+    color: var(--muted); text-transform: uppercase; margin-top: 0.4rem;
+  }
+
+  /* DICE GRID */
+  .dice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 140px);
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+  }
+
+  @media (min-width: 600px) {
+    .dice-grid {
+      grid-template-columns: repeat(4, 130px);
+      gap: 1rem;
+    }
+  }
+
+  .die-wrapper {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 0.6rem;
+  }
+
+  .die-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem; letter-spacing: 0.28em;
+    color: var(--muted); text-transform: uppercase;
+  }
+
+  .die {
+    width: 130px; height: 130px;
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.92rem; font-weight: 400; font-style: italic;
+    letter-spacing: 0.02em; text-align: center;
+    padding: 1rem; line-height: 1.4;
+    position: relative; user-select: none;
+  }
+
+  .die-place {
+    background: linear-gradient(145deg, #2d0f1e, #1a0812);
+    border: 1px solid rgba(212,82,110,0.35);
+    box-shadow: 0 0 50px rgba(212,82,110,0.1), inset 0 1px 0 rgba(212,82,110,0.2);
+    color: #e8889a;
+  }
+  .die-action {
+    background: linear-gradient(145deg, #1e1508, #110e04);
+    border: 1px solid rgba(200,154,82,0.35);
+    box-shadow: 0 0 50px rgba(200,154,82,0.08), inset 0 1px 0 rgba(200,154,82,0.2);
+    color: #d4b06a;
+  }
+  .die-duration {
+    background: linear-gradient(145deg, #160d22, #0e0818);
+    border: 1px solid rgba(155,109,181,0.35);
+    box-shadow: 0 0 50px rgba(155,109,181,0.08), inset 0 1px 0 rgba(155,109,181,0.2);
+    color: #c49ee0;
+  }
+  .die-who {
+    background: linear-gradient(145deg, #071818, #040f0f);
+    border: 1px solid rgba(78,168,160,0.35);
+    box-shadow: 0 0 50px rgba(78,168,160,0.07), inset 0 1px 0 rgba(78,168,160,0.2);
+    color: #7dd4cc;
+  }
+
+  .die.rolling {
+    animation: tumble 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+  @keyframes tumble {
+    0%   { transform: rotate(0deg) scale(1); }
+    15%  { transform: rotate(-20deg) scale(0.87); }
+    35%  { transform: rotate(25deg) scale(1.07); }
+    55%  { transform: rotate(-12deg) scale(0.94); }
+    75%  { transform: rotate(8deg) scale(1.03); }
+    90%  { transform: rotate(-3deg) scale(0.99); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  .die-corner { position: absolute; bottom: 8px; right: 10px; display: flex; gap: 3px; }
+  .dot { width: 3px; height: 3px; border-radius: 50%; opacity: 0.25; }
+  .die-place .dot { background: var(--rose); }
+  .die-action .dot { background: var(--gold); }
+  .die-duration .dot { background: var(--purple); }
+  .die-who .dot { background: var(--teal); }
+
+  /* RESULT */
+  .result-card {
+    background: linear-gradient(135deg, rgba(212,82,110,0.04), rgba(200,154,82,0.04), rgba(155,109,181,0.04));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    margin-bottom: 1.8rem;
+    min-height: 100px;
+    display: flex; align-items: center; justify-content: center;
+    max-width: 480px; width: 100%;
+  }
+
+  .result-inner { opacity: 0; transition: opacity 0.5s 0.45s; }
+  .result-inner.visible { opacity: 1; }
+
+  .result-starter {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem; letter-spacing: 0.2em;
+    color: rgba(240,230,216,0.4); text-transform: uppercase;
+    display: block; margin-bottom: 0.5rem;
+  }
+
+  .result-main {
+    font-size: 1.45rem; font-weight: 300; font-style: italic; line-height: 1.6;
+  }
+
+  .r-who   { color: #7dd4cc; font-weight: 600; font-style: normal; }
+  .r-action { color: #d4b06a; font-weight: 600; font-style: normal; }
+  .r-place  { color: #e8889a; font-weight: 600; font-style: normal; }
+  .r-dur    { color: #c49ee0; font-weight: 600; font-style: normal; }
+
+  /* BUTTON */
+  .roll-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem; font-style: italic; letter-spacing: 0.1em;
+    padding: 1rem 3.5rem;
+    border: 1px solid rgba(212,82,110,0.45);
+    background: transparent; color: var(--rose);
+    border-radius: 60px; cursor: pointer;
+    transition: all 0.3s ease; position: relative; overflow: hidden;
+  }
+  .roll-btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(212,82,110,0.15), transparent 70%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .roll-btn:hover::after { opacity: 1; }
+  .roll-btn:hover { border-color: rgba(212,82,110,0.8); color: var(--cream); transform: translateY(-2px); box-shadow: 0 10px 40px rgba(212,82,110,0.18); }
+  .roll-btn:active { transform: translateY(0); }
+  .roll-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* LEGEND */
+  .legend {
+    display: flex; gap: 1.2rem; flex-wrap: wrap;
+    justify-content: center; margin-top: 2rem;
+  }
+  .legend-item {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem; letter-spacing: 0.2em;
+    display: flex; align-items: center; gap: 0.4rem; opacity: 0.5;
+  }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  .footer {
+    margin-top: 1.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem; color: var(--muted);
+    letter-spacing: 0.2em; text-align: center; opacity: 0.35;
+  }
+
+  /* PARTICLES */
+  .particle {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    animation: floatUp 1.4s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) translateX(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-160px) translateX(var(--drift)) scale(0); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="pp-sg">PP & SG</div>
+  <div class="heart-divider">♡ &nbsp; ♡ &nbsp; ♡</div>
+  <div class="subtitle">pp & sg's secret &nbsp;·&nbsp; eyes off 👁</div>
+</div>
+
+<div class="dice-grid">
+  <div class="die-wrapper">
+    <div class="die-label">the place</div>
+    <div class="die die-place" id="die-place">
+      <span id="place-text">✦</span>
+      <div class="die-corner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <div class="die-wrapper">
+    <div class="die-label">the move</div>
+    <div class="die die-action" id="die-action">
+      <span id="action-text">✦</span>
+      <div class="die-corner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <div class="die-wrapper">
+    <div class="die-label">for how long</div>
+    <div class="die die-duration" id="die-duration">
+      <span id="duration-text">✦</span>
+      <div class="die-corner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <div class="die-wrapper">
+    <div class="die-label">who does it</div>
+    <div class="die die-who" id="die-who">
+      <span id="who-text">✦</span>
+      <div class="die-corner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="result-card">
+  <div class="result-inner" id="result-inner">
+    <span class="result-starter">tonight's command —</span>
+    <div class="result-main" id="result-main">press roll to begin 🎲</div>
+  </div>
+</div>
+
+<button class="roll-btn" id="roll-btn" onclick="roll()">✦ &nbsp; Roll All Four &nbsp; ✦</button>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#e8889a"></div> PLACE</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d4b06a"></div> MOVE</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c49ee0"></div> DURATION</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7dd4cc"></div> WHO</div>
+</div>
+
+<p class="footer">pp & sg's secret &nbsp;·&nbsp; eyes off 👁</p>
+
+<script>
+const places = [
+  "her neck", "her ears", "her lips", "her chest",
+  "her waist", "her feet", "her inner wrist", "her collarbone",
+  "her lower back", "behind her knee", "her thighs",
+  "her stomach", "her shoulders", "her fingertips"
+];
+
+const actions = [
+  "Kiss slowly", "Lick softly", "Blow gently on",
+  "Bite gently", "Massage deeply", "Trace fingers along",
+  "Press lips against", "Breathe warmly on",
+  "Nuzzle into", "Run tongue along",
+  "Suck gently on", "Caress with both hands",
+  "Tease with fingertips", "Leave a mark on"
+];
+
+const durations = [
+  "for 10 seconds", "for 30 seconds",
+  "for 1 full minute", "until she asks to stop",
+  "for as long as you want", "for exactly 20 seconds",
+  "until she smiles", "non-stop for 45 seconds"
+];
+
+const whos = [
+  "PP does it", "SG does it",
+  "both at the same time", "PP does it blindfolded",
+  "SG decides who", "PP does it, eyes closed",
+  "switch halfway", "PP does it twice as slow"
+];
+
+const ids = ['place','action','duration','who'];
+const arrays = [places, actions, durations, whos];
+const dieIds = ['die-place','die-action','die-duration','die-who'];
+
+let rolling = false;
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function spawnParticles() {
+  const colors = ['#d4526e','#c89a52','#9b6db5','#4ea8a0','#f0e6d8'];
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 3 + Math.random() * 7;
+      const drift = (Math.random() - 0.5) * 100;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${20+Math.random()*60}vw;top:${30+Math.random()*40}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1+Math.random()*0.9}s;animation-delay:${Math.random()*0.5}s;`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 20);
+  }
+}
+
+function roll() {
+  if (rolling) return;
+  rolling = true;
+  document.getElementById('roll-btn').disabled = true;
+  document.getElementById('result-inner').classList.remove('visible');
+
+  let ticks = 0;
+  const maxTicks = 22;
+  const interval = setInterval(() => {
+    ids.forEach((id, i) => {
+      document.getElementById(`${id}-text`).textContent = pick(arrays[i]);
+    });
+    ticks++;
+    if (ticks >= maxTicks) {
+      clearInterval(interval);
+
+      const finalPlace    = pick(places);
+      const finalAction   = pick(actions);
+      const finalDuration = pick(durations);
+      const finalWho      = pick(whos);
+
+      document.getElementById('place-text').textContent    = finalPlace;
+      document.getElementById('action-text').textContent   = finalAction;
+      document.getElementById('duration-text').textContent = finalDuration;
+      document.getElementById('who-text').textContent      = finalWho;
+
+      dieIds.forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add('rolling');
+        setTimeout(() => el.classList.remove('rolling'), 720);
+      });
+
+      document.getElementById('result-main').innerHTML =
+        `<span class="r-who">${finalWho}</span> — ` +
+        `<span class="r-action">${finalAction.toLowerCase()}</span> ` +
+        `<span class="r-place">${finalPlace}</span> ` +
+        `<span class="r-dur">${finalDuration}</span>`;
+
+      document.getElementById('result-inner').classList.add('visible');
+      spawnParticles();
+
+      rolling = false;
+      document.getElementById('roll-btn').disabled = false;
+      document.getElementById('roll-btn').textContent = '✦   Roll Again   ✦';
+    }
+  }, 55);
+}
+
+document.getElementById('result-inner').classList.add('visible');
+</script>
+</body>
+</html>

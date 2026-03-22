@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP & SG's Wordle 💛</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0a0a;
+    --cream: #f0e6d8;
+    --muted: #6b4a5a;
+    --rose: #d4526e;
+    --gold: #c89a52;
+    --green: #4ea87a;
+    --yellow: #c8a832;
+    --gray: #3a2a2a;
+    --cell: 58px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Mono', monospace;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 3rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(212,82,110,0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(200,154,82,0.07) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* HEADER */
+  header { text-align: center; margin-bottom: 1.5rem; }
+
+  .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 700; font-style: italic;
+    background: linear-gradient(135deg, var(--rose), var(--gold), var(--rose));
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%}100%{background-position:200%} }
+
+  .tagline {
+    font-size: 0.58rem; letter-spacing: 0.28em;
+    color: var(--muted); text-transform: uppercase; margin-top: 0.4rem;
+  }
+
+  .divider { font-size: 0.8rem; letter-spacing: 6px; opacity: 0.4; margin: 0.5rem 0; }
+
+  /* HINT */
+  .hint-bar {
+    font-size: 0.65rem; letter-spacing: 0.15em;
+    color: var(--muted); margin-bottom: 1.5rem;
+    font-style: italic; font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+  }
+
+  /* GRID */
+  .grid {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+
+  .row { display: flex; gap: 6px; }
+
+  .cell {
+    width: var(--cell); height: var(--cell);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; font-weight: 500;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    transition: border-color 0.1s;
+    position: relative;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .cell.active-row { border-color: rgba(255,255,255,0.25); }
+  .cell.filled { border-color: rgba(255,255,255,0.35); animation: pop 0.1s ease; }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+  .cell.flip { animation: flip 0.5s ease forwards; }
+  @keyframes flip {
+    0%  { transform: rotateX(0); }
+    50% { transform: rotateX(-90deg); background: transparent; }
+    100%{ transform: rotateX(0); }
+  }
+
+  .cell.correct  { background: var(--green);  border-color: var(--green);  color: white; }
+  .cell.present  { background: var(--yellow); border-color: var(--yellow); color: #1a1000; }
+  .cell.absent   { background: var(--gray);   border-color: var(--gray);   color: rgba(240,230,216,0.5); }
+
+  .cell.shake { animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)}
+    60%{transform:translateX(-4px)}
+    80%{transform:translateX(4px)}
+  }
+
+  /* MESSAGE */
+  #message {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem; font-style: italic;
+    color: var(--rose); min-height: 1.8rem;
+    text-align: center; margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* KEYBOARD */
+  .keyboard { display: flex; flex-direction: column; gap: 6px; align-items: center; margin-bottom: 1.5rem; }
+  .kb-row { display: flex; gap: 5px; }
+
+  .key {
+    height: 44px; min-width: 32px; padding: 0 6px;
+    border-radius: 6px; border: none;
+    background: rgba(255,255,255,0.1);
+    color: var(--cream); font-family: 'DM Mono', monospace;
+    font-size: 0.75rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .key:hover { background: rgba(255,255,255,0.18); }
+  .key.wide { min-width: 52px; font-size: 0.65rem; }
+  .key.correct { background: var(--green); color: white; }
+  .key.present { background: var(--yellow); color: #1a1000; }
+  .key.absent  { background: var(--gray); color: rgba(240,230,216,0.35); }
+
+  /* LEGEND */
+  .legend {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 1rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.58rem; letter-spacing: 0.1em; color: var(--muted); }
+  .legend-box { width: 14px; height: 14px; border-radius: 3px; }
+
+  .footer {
+    font-size: 0.55rem; letter-spacing: 0.2em;
+    color: var(--muted); opacity: 0.4; text-align: center;
+  }
+
+  /* WIN overlay */
+  .win-msg {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem; font-style: italic;
+    background: linear-gradient(135deg, var(--rose), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; text-align: center;
+  }
+
+  .particle {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    animation: floatUp 1.4s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%  { transform:translateY(0) translateX(0) scale(1); opacity:1; }
+    100%{ transform:translateY(-160px) translateX(var(--drift)) scale(0); opacity:0; }
+  }
+
+  #restart-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem; font-style: italic;
+    padding: 0.6rem 2rem;
+    border: 1px solid rgba(212,82,110,0.4);
+    background: transparent; color: var(--rose);
+    border-radius: 40px; cursor: pointer;
+    transition: all 0.2s; display: none; margin-bottom: 1rem;
+  }
+  #restart-btn:hover { background: rgba(212,82,110,0.1); color: var(--cream); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">PP & SG's Wordle</div>
+  <div class="divider">♡ &nbsp; ♡ &nbsp; ♡</div>
+  <div class="tagline">guess the 5-letter word &nbsp;·&nbsp; 6 tries</div>
+</header>
+
+<div class="hint-bar" id="hint-bar">hint: what are you, as of today? 😉</div>
+
+<div class="grid" id="grid"></div>
+
+<div id="message"></div>
+<button id="restart-btn" onclick="restart()">✦ &nbsp; Play Again &nbsp; ✦</button>
+
+<div class="keyboard" id="keyboard">
+  <div class="kb-row" id="row0"></div>
+  <div class="kb-row" id="row1"></div>
+  <div class="kb-row" id="row2"></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-box" style="background:var(--green)"></div> correct spot</div>
+  <div class="legend-item"><div class="legend-box" style="background:var(--yellow)"></div> wrong spot</div>
+  <div class="legend-item"><div class="legend-box" style="background:var(--gray)"></div> not in word</div>
+</div>
+
+<p class="footer">pp & sg only &nbsp;·&nbsp; eyes off 👁</p>
+
+<script>
+const ANSWER = "TAKEN";
+const MAX_GUESSES = 6;
+const WORD_LEN = 5;
+
+// Valid 5-letter words (small set for fun — includes common ones + TAKEN)
+const VALID_WORDS = new Set([
+  "ABOUT","ABOVE","ABUSE","ACTOR","ACUTE","ADMIT","ADOPT","ADULT","AFTER","AGAIN",
+  "AGENT","AGREE","AHEAD","ALARM","ALBUM","ALERT","ALIKE","ALIVE","ALLEY","ALLOW",
+  "ALONE","ALONG","ALTER","ANGEL","ANGER","ANGLE","ANGRY","ANIME","ANKLE","ANNEX",
+  "APART","APPLE","APPLY","ARENA","ARGUE","ARISE","ARMOR","ARRAY","ARROW","ASKED",
+  "ASSET","AVOID","AWAKE","AWARD","AWARE","AWFUL","BADLY","BAKER","BASIC","BASIS",
+  "BEACH","BEGAN","BEGIN","BEING","BELOW","BENCH","BIBLE","BLACK","BLADE","BLAME",
+  "BLAND","BLANK","BLAST","BLAZE","BLEED","BLEND","BLESS","BLIND","BLOCK","BLOOD",
+  "BLOOM","BLOWN","BOARD","BONUS","BOOST","BOUND","BRAIN","BRAND","BRAVE","BREAD",
+  "BREAK","BREED","BRICK","BRIDE","BRIEF","BRING","BROAD","BROKE","BROOK","BROWN",
+  "BRUSH","BUILD","BUILT","BURST","BUYER","CABIN","CAMEL","CANDY","CARRY","CATCH",
+  "CAUSE","CHAIR","CHALK","CHAOS","CHARM","CHASE","CHEAP","CHEAT","CHECK","CHEEK",
+  "CHESS","CHEST","CHIEF","CHILD","CHINA","CIVIL","CLAIM","CLASS","CLEAN","CLEAR",
+  "CLIMB","CLING","CLOCK","CLOSE","CLOUD","COACH","COAST","COLOR","COMIC","CORAL",
+  "COULD","COUNT","COURT","COVER","CRAFT","CRANE","CRASH","CRAZY","CREAM","CRIME",
+  "CROSS","CROWD","CROWN","CRUEL","CRUSH","CURVE","CYCLE","DAILY","DANCE","DATED",
+  "DEATH","DEBUT","DELAY","DELTA","DENSE","DEPTH","DEVIL","DIRTY","DISCO","DITCH",
+  "DIZZY","DOUBT","DOUGH","DRAFT","DRAIN","DRAMA","DRAWN","DREAD","DREAM","DRESS",
+  "DRINK","DRIVE","DROVE","DYING","EAGER","EARLY","EARTH","EIGHT","ELITE","EMAIL",
+  "EMOJI","EMPTY","ENEMY","ENJOY","ENTER","ENTRY","EQUAL","ERROR","ESSAY","EVERY",
+  "EXACT","EXIST","EXTRA","FAINT","FAITH","FALLS","FALSE","FANCY","FATAL","FAULT",
+  "FEAST","FEVER","FIBER","FIELD","FIERY","FIFTH","FIFTY","FIGHT","FINAL","FIRST",
+  "FIXED","FLAME","FLASH","FLEET","FLESH","FLICK","FLOAT","FLOOR","FLOUR","FLUID",
+  "FOCUS","FORCE","FORGE","FORTH","FOUND","FRAME","FRANK","FRAUD","FRESH","FRONT",
+  "FROZE","FRUIT","FULLY","FUNNY","GAMER","GHOST","GIANT","GIVEN","GLASS","GLOBE",
+  "GLOOM","GLORY","GLOVE","GRACE","GRADE","GRAIN","GRAND","GRANT","GRAPE","GRASP",
+  "GRASS","GRAVE","GREAT","GREED","GREEN","GREET","GRIEF","GRILL","GROAN","GROSS",
+  "GROUP","GUARD","GUESS","GUEST","GUIDE","GUILT","GUISE","GUSTO","HABIT","HAPPY",
+  "HARSH","HEART","HEAVY","HELLO","HENCE","HINGE","HONEY","HONOR","HORSE","HOTEL",
+  "HOUSE","HUMAN","HUMOR","HURRY","IDEAL","IMAGE","IMPLY","IMPLY","INDEX","INDIE",
+  "INNER","INPUT","IRONY","ISSUE","JOINT","JOKER","JUDGE","JUICE","JUICY","KARMA",
+  "KNIFE","KNOCK","KNOWN","LABEL","LANCE","LARGE","LASER","LATER","LAUGH","LAYER",
+  "LEARN","LEASE","LEAST","LEAVE","LEGAL","LEMON","LEVEL","LIGHT","LIMIT","LINEN",
+  "LIVER","LOCAL","LOGIC","LOOSE","LOVER","LOWER","LUCKY","LUNAR","LYING","MAGIC",
+  "MAPLE","MARCH","MATCH","MAYOR","MEDIA","MERIT","METAL","MIGHT","MINOR","MINUS",
+  "MIXED","MODEL","MONEY","MONTH","MORAL","MOTOR","MOUNT","MOUSE","MOUTH","MOVIE",
+  "MUSIC","NAIVE","NERVE","NEVER","NIGHT","NOBLE","NOISE","NORTH","NOTED","NOVEL",
+  "NURSE","NYMPH","OCEAN","OFFER","OFTEN","OLIVE","ONSET","OPERA","ORDER","OTHER",
+  "OUGHT","OUTER","OWNER","OZONE","PAINT","PANEL","PANIC","PAPER","PARTY","PATCH",
+  "TAKEN","PAUSE","PEACE","PEARL","PHASE","PHONE","PHOTO","PIANO","PIECE","PILOT",
+  "PIXEL","PIZZA","PLACE","PLAIN","PLANE","PLANT","PLATE","PLAZA","PLEAD","PLUCK",
+  "PLUMB","POINT","POLAR","POPPY","POWER","PRESS","PRICE","PRIDE","PRIME","PRINT",
+  "PRIOR","PRIZE","PROBE","PRONE","PROOF","PROUD","PROVE","PSALM","PULSE","PUPIL",
+  "QUEEN","QUERY","QUEST","QUEUE","QUICK","QUIET","QUOTA","QUOTE","RADAR","RAISE",
+  "RALLY","RANGE","RAPID","REACH","READY","REALM","REFER","REIGN","RELAX","RELAY",
+  "REPAY","REPLY","RESET","RIDER","RIDGE","RIGHT","RIGID","RISKY","RIVAL","RIVER",
+  "ROBOT","ROCKY","ROMAN","ROUGE","ROUGH","ROUND","ROUTE","ROYAL","RULER","RURAL",
+  "SADLY","SAINT","SALAD","SAUCE","SCALE","SCARE","SCENE","SCORE","SCOUT","SENSE",
+  "SERVE","SEVEN","SHADE","SHAKE","SHALL","SHAME","SHAPE","SHARE","SHARK","SHARP",
+  "SHELL","SHIFT","SHINE","SHIRT","SHOCK","SHORE","SHORT","SHOUT","SIGHT","SILLY",
+  "SINCE","SIXTH","SIXTY","SIZED","SKILL","SLAVE","SLEEP","SLICE","SLIDE","SLOPE",
+  "SMALL","SMART","SMELL","SMILE","SMOKE","SOLAR","SOLID","SOLVE","SORRY","SOUTH",
+  "SPACE","SPARE","SPARK","SPEAK","SPEED","SPELL","SPEND","SPICY","SPILL","SPINE",
+  "SPITE","SPLIT","SPOKE","SPOOK","SPORT","SPRAY","SQUAD","STACK","STAFF","STAGE",
+  "STAIN","STAIR","STAKE","STAND","STARK","START","STATE","STAVE","STAYS","STEAM",
+  "STEEL","STEEP","STEER","STERN","STICK","STILL","STOCK","STONE","STOOD","STORM",
+  "STORY","STRAP","STRAW","STRIP","STUCK","STUDY","STYLE","SUGAR","SUITE","SUNNY",
+  "SUPER","SURGE","SWEAR","SWEEP","SWEET","SWEPT","SWIFT","SWING","SWORD","TABLE",
+  "TASTE","TEACH","TEARS","TENSE","TERMS","THEIR","THEME","THERE","THESE","THICK",
+  "THING","THINK","THIRD","THOSE","THREE","THREW","THROW","TIGHT","TIMER","TIRED",
+  "TITLE","TODAY","TOKEN","TOPIC","TOTAL","TOUCH","TOUGH","TOWER","TOXIC","TRACE",
+  "TRACK","TRADE","TRAIN","TRAIL","TRAIT","TRASH","TREAD","TREAT","TREND","TRIAL",
+  "TRICK","TRIED","TROOP","TRUCK","TRULY","TRUST","TRUTH","TUMOR","TUNER","TWICE",
+  "ULTRA","UNCLE","UNDER","UNION","UNITY","UNTIL","UPPER","UPSET","USAGE","USUAL",
+  "UTTER","VALID","VALUE","VALVE","VIBES","VIDEO","VIGOR","VIRAL","VISIT","VISTA",
+  "VITAL","VIVID","VOCAL","VOICE","VOTER","WAIST","WATCH","WATER","WEARY","WEIRD",
+  "WHILE","WHITE","WHOLE","WIDER","WITCH","WITTY","WOMAN","WOMEN","WORLD","WORRY",
+  "WORSE","WORST","WORTH","WOULD","WOUND","WRATH","WRITE","WROTE","YOUNG","YOUTH",
+  "ZESTY","ZILCH","ZIPPY","ZONES","ZONED"
+]);
+
+let currentRow = 0;
+let currentCol = 0;
+let currentGuess = [];
+let gameOver = false;
+let keyStates = {};
+
+const KEYS = [
+  ['Q','W','E','R','T','Y','U','I','O','P'],
+  ['A','S','D','F','G','H','J','K','L'],
+  ['ENTER','Z','X','C','V','B','N','M','⌫']
+];
+
+// Build grid
+const gridEl = document.getElementById('grid');
+const cells = [];
+for (let r = 0; r < MAX_GUESSES; r++) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  cells[r] = [];
+  for (let c = 0; c < WORD_LEN; c++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    row.appendChild(cell);
+    cells[r][c] = cell;
+  }
+  gridEl.appendChild(row);
+}
+
+// Build keyboard
+KEYS.forEach((row, ri) => {
+  const rowEl = document.getElementById(`row${ri}`);
+  row.forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'key' + (k.length > 1 ? ' wide' : '');
+    btn.textContent = k;
+    btn.dataset.key = k;
+    btn.addEventListener('click', () => handleKey(k));
+    rowEl.appendChild(btn);
+  });
+});
+
+// Keyboard input
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Enter') handleKey('ENTER');
+  else if (e.key === 'Backspace') handleKey('⌫');
+  else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+});
+
+function handleKey(k) {
+  if (gameOver) return;
+  if (k === '⌫') {
+    if (currentCol > 0) {
+      currentCol--;
+      currentGuess.pop();
+      cells[currentRow][currentCol].textContent = '';
+      cells[currentRow][currentCol].classList.remove('filled');
+    }
+  } else if (k === 'ENTER') {
+    submitGuess();
+  } else if (currentCol < WORD_LEN) {
+    currentGuess.push(k);
+    const cell = cells[currentRow][currentCol];
+    cell.textContent = k;
+    cell.classList.add('filled');
+    currentCol++;
+  }
+}
+
+function submitGuess() {
+  if (currentCol < WORD_LEN) {
+    showMessage("not enough letters 🥺");
+    shakeRow(currentRow);
+    return;
+  }
+  const guess = currentGuess.join('');
+  if (!VALID_WORDS.has(guess)) {
+    showMessage("not a valid word!");
+    shakeRow(currentRow);
+    return;
+  }
+
+  const result = evaluate(guess);
+  revealRow(currentRow, result, guess);
+}
+
+function evaluate(guess) {
+  const result = Array(WORD_LEN).fill('absent');
+  const answerArr = ANSWER.split('');
+  const guessArr = guess.split('');
+  const used = Array(WORD_LEN).fill(false);
+
+  // First pass: correct
+  for (let i = 0; i < WORD_LEN; i++) {
+    if (guessArr[i] === answerArr[i]) {
+      result[i] = 'correct';
+      used[i] = true;
+    }
+  }
+  // Second pass: present
+  for (let i = 0; i < WORD_LEN; i++) {
+    if (result[i] === 'correct') continue;
+    for (let j = 0; j < WORD_LEN; j++) {
+      if (!used[j] && guessArr[i] === answerArr[j]) {
+        result[i] = 'present';
+        used[j] = true;
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+function revealRow(row, result, guess) {
+  const delay = 300;
+  result.forEach((state, i) => {
+    setTimeout(() => {
+      const cell = cells[row][i];
+      cell.classList.add('flip');
+      setTimeout(() => {
+        cell.classList.remove('flip');
+        cell.classList.add(state);
+        updateKey(guess[i], state);
+      }, 250);
+    }, i * delay);
+  });
+
+  const totalDelay = WORD_LEN * delay + 300;
+  setTimeout(() => {
+    const won = result.every(r => r === 'correct');
+    if (won) {
+      gameOver = true;
+      
+      showMessage("🎉 Congratulations Pranoti, you are officially TAKEN! 💛");
+      boom();
+      document.getElementById('restart-btn').style.display = 'inline-block';
+    } else {
+      currentRow++;
+      currentCol = 0;
+      currentGuess = [];
+      if (currentRow >= MAX_GUESSES) {
+        gameOver = true;
+        showMessage(`the answer was TAKEN 💛`);
+        document.getElementById('restart-btn').style.display = 'inline-block';
+      }
+    }
+  }, totalDelay);
+}
+
+function updateKey(letter, state) {
+  const priority = { correct: 3, present: 2, absent: 1 };
+  const current = keyStates[letter];
+  if (!current || priority[state] > priority[current]) {
+    keyStates[letter] = state;
+    const btn = document.querySelector(`[data-key="${letter}"]`);
+    if (btn) {
+      btn.classList.remove('correct','present','absent');
+      btn.classList.add(state);
+    }
+  }
+}
+
+function shakeRow(row) {
+  cells[row].forEach(c => {
+    c.classList.add('shake');
+    c.addEventListener('animationend', () => c.classList.remove('shake'), {once:true});
+  });
+}
+
+let msgTimeout;
+function showMessage(txt) {
+  const el = document.getElementById('message');
+  el.textContent = txt;
+  clearTimeout(msgTimeout);
+  if (!gameOver) msgTimeout = setTimeout(() => el.textContent = '', 2000);
+}
+
+function boom() {
+  const colors = ['#d4526e','#c89a52','#4ea87a','#f0e6d8','#c8a832'];
+  for (let i = 0; i < 40; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4 + Math.random() * 7;
+      const drift = (Math.random() - 0.5) * 120;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${20+Math.random()*60}vw;top:${40+Math.random()*20}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1+Math.random()}s;animation-delay:${Math.random()*0.5}s;`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 25);
+  }
+}
+
+function restart() {
+  currentRow = 0; currentCol = 0;
+  currentGuess = []; gameOver = false; keyStates = {};
+  document.getElementById('message').textContent = '';
+  document.getElementById('restart-btn').style.display = 'none';
+  cells.forEach(row => row.forEach(c => {
+    c.textContent = ''; c.className = 'cell';
+  }));
+  document.querySelectorAll('.key').forEach(k => k.classList.remove('correct','present','absent'));
+}
+</script>
+</body>
+</html>

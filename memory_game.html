@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP & SG — Memory Game 💛</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0809;
+    --rose: #c8526a;
+    --gold: #c89a52;
+    --cream: #f0e6d8;
+    --muted: #7a5060;
+    --green: #4ea87a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(200,82,106,0.13) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 90%, rgba(200,154,82,0.09) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  header { text-align: center; margin-bottom: 1.5rem; position: relative; z-index: 1; }
+
+  .title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 600; font-style: italic;
+    background: linear-gradient(135deg, var(--rose), var(--gold), var(--rose));
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; animation: shimmer 4s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .hearts { font-size: 0.9rem; letter-spacing: 8px; opacity: 0.4; margin: 0.3rem 0; }
+  .subtitle {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase;
+  }
+
+  /* STATS */
+  .stats {
+    display: flex; gap: 2.5rem; margin-bottom: 1.5rem;
+    position: relative; z-index: 1;
+  }
+  .stat { text-align: center; font-family: 'DM Mono', monospace; }
+  .stat-val { font-size: 1.8rem; font-weight: 500; color: var(--gold); line-height: 1; }
+  .stat-label { font-size: 0.52rem; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-top: 0.2rem; }
+
+  /* GRID — 5 columns × 4 rows = 20 cards (10 pairs) */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    max-width: 680px; width: 100%;
+    position: relative; z-index: 1;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  }
+
+  /* CARD */
+  .card-wrap { aspect-ratio: 3/4; perspective: 900px; cursor: pointer; }
+
+  .card {
+    width: 100%; height: 100%;
+    position: relative; transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card.matched { transform: rotateY(180deg); cursor: default; }
+
+  .card-face {
+    position: absolute; inset: 0; border-radius: 12px;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+
+  /* BACK */
+  .card-back {
+    background: linear-gradient(145deg, #2a1018, #1a0a10);
+    border: 1px solid rgba(200,82,106,0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(200,82,106,0.15);
+    flex-direction: column; gap: 4px;
+  }
+  .back-heart { font-size: clamp(1.2rem, 3vw, 1.8rem); color: rgba(200,82,106,0.55); }
+  .back-label {
+    font-family: 'DM Mono', monospace; font-size: 0.38rem;
+    letter-spacing: 0.18em; color: rgba(200,82,106,0.28); text-transform: uppercase;
+  }
+
+  /* FRONT — EMOJI CARD */
+  .card-front {
+    background: linear-gradient(145deg, #fdf5ec, #f5e8d5);
+    border: 1px solid rgba(200,154,82,0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transform: rotateY(180deg);
+    flex-direction: column; text-align: center;
+    gap: 5px; padding: 0.6rem 0.4rem;
+  }
+  .card-emoji { font-size: clamp(1.4rem, 3.5vw, 2rem); line-height: 1; }
+  .card-label {
+    font-size: clamp(0.5rem, 1.3vw, 0.65rem);
+    color: #5a2a30; font-weight: 600; letter-spacing: 0.04em;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* FRONT — TEXT CARD */
+  .card-front.text-card {
+    background: linear-gradient(145deg, #1e0d14, #160810);
+    border: 1px solid rgba(200,82,106,0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .card-text {
+    font-size: clamp(0.52rem, 1.3vw, 0.68rem);
+    color: #f0c0c8; font-style: italic; line-height: 1.35; padding: 0 0.3rem;
+  }
+
+  /* MATCHED glow */
+  .card.matched .card-front:not(.text-card) {
+    background: linear-gradient(145deg, #fff8e8, #fdeecf);
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(200,154,82,0.25);
+  }
+  .card.matched .card-front.text-card {
+    border-color: rgba(200,82,106,0.6);
+    box-shadow: 0 0 20px rgba(200,82,106,0.15);
+  }
+
+  /* POP animation */
+  .card-wrap.pop .card { animation: pop 0.15s ease; }
+  @keyframes pop { 0%{transform:rotateY(180deg) scale(1)} 50%{transform:rotateY(180deg) scale(1.08)} 100%{transform:rotateY(180deg) scale(1)} }
+
+  /* REVEAL POPUP */
+  .popup-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 99;
+  }
+  .popup-overlay.show { display: block; }
+
+  .popup {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: linear-gradient(145deg, #1e0d14, #130810);
+    border: 1px solid rgba(200,154,82,0.4);
+    border-radius: 18px; padding: 1.8rem 2rem;
+    text-align: center; z-index: 100;
+    max-width: 320px; width: 88%;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.7);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .popup.show { transform: translate(-50%, -50%) scale(1); }
+
+  .popup-tag {
+    font-family: 'DM Mono', monospace; font-size: 0.55rem;
+    letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.5rem;
+  }
+  .popup-emoji { font-size: 2.4rem; margin-bottom: 0.4rem; }
+  .popup-title {
+    font-size: 1.3rem; font-weight: 600; color: var(--cream);
+    margin-bottom: 0.5rem;
+  }
+  .popup-meaning {
+    font-size: 0.92rem; font-style: italic; color: rgba(240,200,210,0.85);
+    line-height: 1.5;
+  }
+
+  /* WIN SCREEN */
+  .win-screen {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,5,8,0.97); z-index: 200;
+    flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 2rem;
+  }
+  .win-screen.show { display: flex; }
+
+  .win-title {
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    font-weight: 600; font-style: italic;
+    background: linear-gradient(135deg, var(--rose), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 0.5rem;
+  }
+  .win-sub {
+    font-size: 1rem; font-style: italic;
+    color: rgba(240,230,216,0.65); margin-bottom: 0.5rem; max-width: 380px; line-height: 1.5;
+  }
+  .win-stats {
+    font-family: 'DM Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.18em; color: var(--gold);
+    text-transform: uppercase; margin-bottom: 0.8rem;
+  }
+  .win-note {
+    font-family: 'Caveat', cursive; font-size: 1.35rem;
+    color: #e8a0b0; max-width: 380px; line-height: 1.5; margin-bottom: 2rem;
+  }
+  .win-btn {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-style: italic;
+    padding: 0.8rem 2.5rem;
+    border: 1px solid rgba(200,82,106,0.45);
+    background: transparent; color: var(--rose);
+    border-radius: 50px; cursor: pointer; transition: all 0.2s;
+  }
+  .win-btn:hover { background: rgba(200,82,106,0.1); color: var(--cream); }
+
+  /* RESTART */
+  .restart-btn {
+    font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic;
+    padding: 0.6rem 2rem;
+    border: 1px solid rgba(200,154,82,0.3);
+    background: transparent; color: var(--gold);
+    border-radius: 40px; cursor: pointer; transition: all 0.2s;
+    position: relative; z-index: 1;
+  }
+  .restart-btn:hover { background: rgba(200,154,82,0.08); color: var(--cream); }
+
+  /* PARTICLES */
+  .particle {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    animation: floatUp 1.5s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%  { transform:translateY(0) translateX(0) scale(1); opacity:1; }
+    100%{ transform:translateY(-180px) translateX(var(--drift)) scale(0); opacity:0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">PP & SG 💛</div>
+  <div class="hearts">♡ &nbsp; ♡ &nbsp; ♡</div>
+  <div class="subtitle">match the emoji to its story · flip & find</div>
+</header>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val" id="moves-val">0</div>
+    <div class="stat-label">moves</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" id="pairs-val">0</div>
+    <div class="stat-label">matched</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" id="left-val">10</div>
+    <div class="stat-label">left</div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+<button class="restart-btn" onclick="initGame()">✦ &nbsp; Shuffle & Restart &nbsp; ✦</button>
+
+<!-- Match popup -->
+<div class="popup-overlay" id="popup-overlay" onclick="closePopup()"></div>
+<div class="popup" id="popup">
+  <div class="popup-tag">you found it 💛</div>
+  <div class="popup-emoji" id="popup-emoji"></div>
+  <div class="popup-title" id="popup-title"></div>
+  <div class="popup-meaning" id="popup-meaning"></div>
+</div>
+
+<!-- Win screen -->
+<div class="win-screen" id="win-screen">
+  <div class="win-title">You remember everything 💛</div>
+  <div class="win-sub">Every memory, every little moment — you know us perfectly.</div>
+  <div class="win-stats" id="win-stats"></div>
+  <div class="win-note">"This is us, SG — every silly, chaotic, beautiful little thing. I wouldn't trade a single one. 💛 — PP"</div>
+  <button class="win-btn" onclick="restartFromWin()">✦ &nbsp; Play Again &nbsp; ✦</button>
+</div>
+
+<script>
+const PAIRS = [
+  {
+    id: 0, emoji: "🍷", label: "Wine Kiss",
+    meaning: "The night of our first kiss — I could smell the wine on your breath. I've never forgotten it. 🍷"
+  },
+  {
+    id: 1, emoji: "🏠", label: "Her Home",
+    meaning: "You are my home. And I used to show up at your bachelor place all the time just to be near you. 🏠"
+  },
+  {
+    id: 2, emoji: "🦁", label: "The Zoo",
+    meaning: "Our very first outing — with others around, but still felt like it was just us two. 🦁"
+  },
+  {
+    id: 3, emoji: "💢", label: "Kalesh",
+    meaning: "You argue. Passionately. Loudly. Often. And somehow it's one of my favourite things about you. 😭"
+  },
+  {
+    id: 4, emoji: "🗣️", label: "Blah Blah",
+    meaning: "You speak SO much. I could listen to you talk forever and never get bored. 💛"
+  },
+  {
+    id: 5, emoji: "👗", label: "Barbie",
+    meaning: "You love Barbie. You ARE Barbie. Pink, iconic, unbothered, and completely fabulous. 💅"
+  },
+  {
+    id: 6, emoji: "❤️", label: "Hearts",
+    meaning: "You collect mine every single day without even trying. All of them. Always. ❤️"
+  },
+  {
+    id: 7, emoji: "🦅", label: "Aadhyan",
+    meaning: "Where it all started — our college entrepreneurship cell where PP & SG first worked side by side. 🦅"
+  },
+  {
+    id: 8, emoji: "🍋", label: "Lemon Drink",
+    meaning: "Your go-to order. Refreshing, a little tangy, a little sweet — just like you. 🍋"
+  },
+  {
+    id: 9, emoji: "🌷", label: "Tulips",
+    meaning: "Your favourite flower. I remember. I will always remember. 🌷"
+  },
+];
+
+let cards = [];
+let flipped = [];
+let matched = new Set();
+let moves = 0;
+let locked = false;
+let popupTimeout = null;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function initGame() {
+  cards = []; flipped = []; matched.clear(); moves = 0; locked = false;
+  closePopup(); document.getElementById('win-screen').classList.remove('show');
+  updateStats();
+
+  const raw = [];
+  PAIRS.forEach((p, i) => {
+    raw.push({ pairId: i, type: 'emoji', data: p });
+    raw.push({ pairId: i, type: 'text',  data: p });
+  });
+  cards = shuffle(raw);
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  cards.forEach((c, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    wrap.id = `wrap-${idx}`;
+    wrap.addEventListener('click', () => flipCard(idx));
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = `card-${idx}`;
+
+    // Back
+    const back = document.createElement('div');
+    back.className = 'card-face card-back';
+    back.innerHTML = `<div class="back-heart">♡</div><div class="back-label">pp & sg</div>`;
+
+    // Front
+    const front = document.createElement('div');
+
+    if (c.type === 'emoji') {
+      front.className = 'card-face card-front';
+      front.innerHTML = `
+        <div class="card-emoji">${c.data.emoji}</div>
+        <div class="card-label">${c.data.label}</div>
+      `;
+    } else {
+      front.className = 'card-face card-front text-card';
+      front.innerHTML = `<div class="card-text">${c.data.meaning}</div>`;
+    }
+
+    card.appendChild(back);
+    card.appendChild(front);
+    wrap.appendChild(card);
+    grid.appendChild(wrap);
+  });
+}
+
+function flipCard(idx) {
+  if (locked) return;
+  if (matched.has(idx)) return;
+  if (flipped.includes(idx)) return;
+  if (flipped.length >= 2) return;
+
+  const cardEl = document.getElementById(`card-${idx}`);
+  cardEl.classList.add('flipped');
+  flipped.push(idx);
+
+  if (flipped.length === 2) {
+    moves++;
+    updateStats();
+    locked = true;
+    setTimeout(checkMatch, 700);
+  }
+}
+
+function checkMatch() {
+  const [a, b] = flipped;
+  const ca = cards[a], cb = cards[b];
+
+  if (ca.pairId === cb.pairId && ca.type !== cb.type) {
+    // MATCH
+    matched.add(a); matched.add(b);
+    document.getElementById(`card-${a}`).classList.add('matched');
+    document.getElementById(`card-${b}`).classList.add('matched');
+
+    // Pop animation
+    const wa = document.getElementById(`wrap-${a}`), wb = document.getElementById(`wrap-${b}`);
+    wa.classList.add('pop'); wb.classList.add('pop');
+    setTimeout(() => { wa.classList.remove('pop'); wb.classList.remove('pop'); }, 300);
+
+    flipped = [];
+    locked = false;
+    updateStats();
+    showPopup(ca.data);
+    spawnParticles();
+
+    if (matched.size === cards.length) {
+      setTimeout(showWin, 2200);
+    }
+  } else {
+    // NO MATCH
+    setTimeout(() => {
+      document.getElementById(`card-${a}`).classList.remove('flipped');
+      document.getElementById(`card-${b}`).classList.remove('flipped');
+      flipped = [];
+      locked = false;
+    }, 300);
+  }
+}
+
+function updateStats() {
+  document.getElementById('moves-val').textContent = moves;
+  document.getElementById('pairs-val').textContent = matched.size / 2;
+  document.getElementById('left-val').textContent = PAIRS.length - matched.size / 2;
+}
+
+function showPopup(data) {
+  document.getElementById('popup-emoji').textContent = data.emoji;
+  document.getElementById('popup-title').textContent = data.label;
+  document.getElementById('popup-meaning').textContent = data.meaning;
+  document.getElementById('popup').classList.add('show');
+  document.getElementById('popup-overlay').classList.add('show');
+  clearTimeout(popupTimeout);
+  popupTimeout = setTimeout(closePopup, 3000);
+}
+
+function closePopup() {
+  document.getElementById('popup').classList.remove('show');
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+function showWin() {
+  const rating = moves <= 14 ? "flawless memory! 🔥" : moves <= 22 ? "pretty sharp! 💛" : "took a while but you got there 😄";
+  document.getElementById('win-stats').textContent = `${moves} moves · ${rating}`;
+  document.getElementById('win-screen').classList.add('show');
+  bigBoom();
+}
+
+function restartFromWin() {
+  document.getElementById('win-screen').classList.remove('show');
+  initGame();
+}
+
+function spawnParticles() {
+  const colors = ['#c8526a','#c89a52','#f0e6d8','#e8889a','#d4b06a'];
+  for (let i = 0; i < 18; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4 + Math.random() * 6, drift = (Math.random() - 0.5) * 90;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${20+Math.random()*60}vw;top:${30+Math.random()*40}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1+Math.random()*0.7}s;animation-delay:${Math.random()*0.3}s;`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 20);
+  }
+}
+
+function bigBoom() {
+  const colors = ['#c8526a','#c89a52','#f0e6d8','#e8889a','#d4b06a','#a8d8a8','#b088e8'];
+  for (let i = 0; i < 100; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4 + Math.random() * 9, drift = (Math.random() - 0.5) * 160;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${10+Math.random()*80}vw;top:${20+Math.random()*60}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1.2+Math.random()*1}s;animation-delay:${Math.random()*0.8}s;`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 12);
+  }
+}
+
+initGame();
+</script>
+</body>
+</html>

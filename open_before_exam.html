@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Before Your Exam 💛</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400;500&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0810;
+    --rose: #c8526a;
+    --gold: #c89a52;
+    --cream: #f0e6d8;
+    --muted: #6b4a5a;
+    --green: #4ea87a;
+    --surface: #160d1e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem 1rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(200,82,106,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(200,154,82,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(78,168,122,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* SCREENS */
+  .screen {
+    display: none; flex-direction: column;
+    align-items: center; text-align: center;
+    max-width: 520px; width: 100%;
+    position: relative; z-index: 1;
+    animation: fadeIn 0.6s ease;
+  }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  /* INTRO SCREEN */
+  .envelope {
+    font-size: 5rem; margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+  .intro-title {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(2rem, 6vw, 2.8rem);
+    font-weight: 700; color: var(--cream);
+    margin-bottom: 0.5rem; line-height: 1.2;
+  }
+
+  .intro-sub {
+    font-size: 1rem; font-style: italic;
+    color: rgba(240,230,216,0.6); margin-bottom: 0.5rem; line-height: 1.5;
+  }
+
+  .intro-note {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  /* PROGRESS */
+  .progress-wrap {
+    width: 100%; margin-bottom: 2rem;
+  }
+
+  .progress-dots {
+    display: flex; justify-content: center; gap: 0.8rem; margin-bottom: 0.5rem;
+  }
+
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    transition: all 0.4s ease;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .dot.done { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px rgba(78,168,122,0.5); }
+  .dot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px rgba(200,154,82,0.5); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+  .progress-label {
+    font-family: 'DM Mono', monospace; font-size: 0.55rem;
+    letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase;
+  }
+
+  /* QUESTION CARD */
+  .q-num {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .q-text {
+    font-size: clamp(1.3rem, 3.5vw, 1.8rem);
+    font-weight: 400; font-style: italic;
+    line-height: 1.4; margin-bottom: 2rem;
+    color: var(--cream);
+  }
+
+  .options {
+    display: flex; flex-direction: column; gap: 0.7rem;
+    width: 100%;
+  }
+
+  .option {
+    padding: 1rem 1.5rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    font-size: 1rem; font-style: italic;
+    color: var(--cream); cursor: pointer;
+    transition: all 0.2s; text-align: left;
+    position: relative; overflow: hidden;
+  }
+  .option::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(200,82,106,0.1), transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .option:hover::before { opacity: 1; }
+  .option:hover {
+    border-color: rgba(200,82,106,0.4);
+    transform: translateX(4px);
+  }
+  .option.correct {
+    background: rgba(78,168,122,0.15);
+    border-color: rgba(78,168,122,0.6);
+    color: #a8e8c0;
+    transform: none; cursor: default;
+  }
+  .option.wrong {
+    background: rgba(200,82,106,0.1);
+    border-color: rgba(200,82,106,0.3);
+    color: rgba(240,230,216,0.4);
+    cursor: default;
+  }
+  .option.disabled { cursor: default; pointer-events: none; }
+
+  .option-letter {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    color: var(--gold); margin-right: 0.8rem; font-style: normal;
+  }
+
+  /* MINI REVEAL after each question */
+  .mini-reveal {
+    margin-top: 1.5rem; padding: 1.2rem 1.5rem;
+    background: linear-gradient(135deg, rgba(200,82,106,0.08), rgba(200,154,82,0.06));
+    border: 1px solid rgba(200,154,82,0.25);
+    border-radius: 16px; width: 100%;
+    animation: fadeIn 0.5s ease;
+  }
+  .mini-reveal-emoji { font-size: 2rem; margin-bottom: 0.4rem; }
+  .mini-reveal-text {
+    font-size: 1rem; font-style: italic; line-height: 1.5;
+    color: rgba(240,230,216,0.85);
+  }
+  .mini-reveal-tag {
+    font-family: 'DM Mono', monospace; font-size: 0.52rem;
+    letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase;
+    margin-top: 0.4rem;
+  }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem; font-style: italic; letter-spacing: 0.08em;
+    padding: 0.9rem 2.5rem;
+    border: 1px solid rgba(200,82,106,0.45);
+    background: transparent; color: var(--rose);
+    border-radius: 50px; cursor: pointer;
+    transition: all 0.25s ease; margin-top: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(200,82,106,0.15), transparent 70%);
+    opacity: 0; transition: opacity 0.25s;
+  }
+  .btn:hover::after { opacity: 1; }
+  .btn:hover { border-color: rgba(200,82,106,0.8); color: var(--cream); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,82,106,0.2); }
+  .btn.gold-btn { border-color: rgba(200,154,82,0.5); color: var(--gold); }
+  .btn.gold-btn:hover { border-color: var(--gold); color: var(--cream); box-shadow: 0 8px 30px rgba(200,154,82,0.2); }
+
+  /* FINAL SCREEN */
+  .medal { font-size: 4rem; margin-bottom: 0.8rem; animation: spin 1s ease; }
+  @keyframes spin { from{transform:rotate(-20deg) scale(0)} to{transform:rotate(0) scale(1)} }
+
+  .final-title {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 700; line-height: 1.2; margin-bottom: 0.8rem;
+    background: linear-gradient(135deg, var(--rose), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .final-score {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .message-card {
+    background: linear-gradient(145deg, rgba(200,82,106,0.07), rgba(200,154,82,0.05));
+    border: 1px solid rgba(200,154,82,0.2);
+    border-radius: 20px; padding: 2rem 1.8rem;
+    text-align: left; width: 100%; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .message-card::before {
+    content: '"'; position: absolute; top: -10px; left: 15px;
+    font-size: 8rem; color: rgba(200,82,106,0.08);
+    font-family: 'Cormorant Garamond', serif; line-height: 1;
+  }
+
+  .message-text {
+    font-size: 1.05rem; font-style: italic; line-height: 1.8;
+    color: var(--cream); position: relative; z-index: 1;
+  }
+
+  .message-text p { margin-bottom: 0.8rem; }
+  .message-text p:last-child { margin-bottom: 0; }
+
+  .message-sig {
+    font-family: 'Caveat', cursive; font-size: 1.4rem;
+    color: var(--rose); margin-top: 1rem;
+    display: block; text-align: right;
+  }
+
+  .final-badge {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase;
+    margin-top: 1rem;
+  }
+
+  /* PARTICLES */
+  .particle {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    animation: floatUp 1.5s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%  { transform:translateY(0) translateX(0) scale(1); opacity:1; }
+    100%{ transform:translateY(-180px) translateX(var(--drift)) scale(0); opacity:0; }
+  }
+
+  .stars { font-size: 1rem; letter-spacing: 6px; opacity: 0.4; margin: 0.3rem 0; }
+</style>
+</head>
+<body>
+
+<!-- INTRO SCREEN -->
+<div class="screen active" id="screen-intro">
+  <div class="envelope">💌</div>
+  <div class="intro-title">For Pranoti,<br>before you conquer the world 🫡</div>
+  <div class="stars">✦ &nbsp; ✦ &nbsp; ✦</div>
+  <div class="intro-sub">SG made this for you. Before you go show the CDS exam who's boss, answer 3 little questions first.</div>
+  <div class="intro-note">warning: this will make you smile 💛</div>
+  <button class="btn gold-btn" onclick="startGame()">✦ &nbsp; Open &nbsp; ✦</button>
+</div>
+
+<!-- QUESTION SCREENS -->
+<div class="screen" id="screen-q">
+  <div class="progress-wrap">
+    <div class="progress-dots">
+      <div class="dot active" id="dot-0"></div>
+      <div class="dot" id="dot-1"></div>
+      <div class="dot" id="dot-2"></div>
+    </div>
+    <div class="progress-label" id="progress-label">Question 1 of 3</div>
+  </div>
+
+  <div class="q-num" id="q-num">Question 1</div>
+  <div class="q-text" id="q-text"></div>
+  <div class="options" id="options"></div>
+
+  <div class="mini-reveal" id="mini-reveal" style="display:none;">
+    <div class="mini-reveal-emoji" id="reveal-emoji"></div>
+    <div class="mini-reveal-text" id="reveal-text"></div>
+    <div class="mini-reveal-tag" id="reveal-tag"></div>
+  </div>
+
+  <button class="btn" id="next-btn" style="display:none;" onclick="nextQuestion()">Next ✦</button>
+</div>
+
+<!-- FINAL SCREEN -->
+<div class="screen" id="screen-final">
+  <div class="medal">🎖️</div>
+  <div class="final-title">See? You know everything.</div>
+  <div class="final-score">3 / 3 correct &nbsp;·&nbsp; perfect score &nbsp;·&nbsp; just like you 💛</div>
+
+  <div class="message-card">
+    <div class="message-text">
+      <p>You just answered the hardest questionnaire I could make and you got every single one right.</p>
+      <p>You remembered 22nd October. You remembered 23rd August. You remembered the pack of 3 that I gave you 😭</p>
+      <p>If you can remember all of that, you can walk into that exam hall and remember everything. Because you always do. You always show up. You always nail it, even when you think you won't. Because I trust my Babu Cutie Kuchu Puchu, she can do any damn thing in this world if she wants to!</p>
+      <p>The exam has no idea what's about to hit it. You've worked for this. You've earned this. And I will be the proudest person alive when you come out of that hall.</p>
+      <p>Now go get that IMA shit!! LFG!! 🫡🔥</p>
+      <span class="message-sig">— SG, always in your corner 💛</span>
+    </div>
+  </div>
+
+  <div class="final-badge">✦ &nbsp; you've got this, PP &nbsp; ✦ &nbsp; CDS 2026 &nbsp; ✦</div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    num: "Question 1 of 3",
+    text: "When did we first make out? 🍷",
+    options: ["22nd October", "14th May", "25th September", "7th April"],
+    correct: 0,
+    emoji: "🍷",
+    reveal: "22nd October. A night I think about more than I'll ever admit. You smelled like wine and I never wanted to be anywhere else.",
+    tag: "— SG remembers everything too 💛"
+  },
+  {
+    num: "Question 2 of 3",
+    text: "When did SG propose to you? 💍",
+    options: ["11th March", "23rd August", "19th November", "4th June"],
+    correct: 1,
+    emoji: "💍",
+    reveal: "23rd August. The day I asked you and you said yes and I think my heart stopped for a full second. Best day.",
+    tag: "— the answer I'll never forget asking for 💛"
+  },
+  {
+    num: "Question 3 of 3",
+    text: "What was SG's first gift to you? 😏",
+    options: ["Flowers 🌷", "Chocolates 🍫", "A pack of 3 box 😭", "Perfume 🌿"],
+    correct: 2,
+    emoji: "😭",
+    reveal: "A pack of 3. Out of everything in the world. That was the first gift. Iconic. Legendary. Very on brand for SG 😭",
+    tag: "— no further comments from SG 💀"
+  }
+];
+
+let current = 0;
+let answered = false;
+
+function startGame() {
+  showScreen('screen-q');
+  loadQuestion(0);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function loadQuestion(idx) {
+  answered = false;
+  const q = QUESTIONS[idx];
+  document.getElementById('q-num').textContent = q.num;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('progress-label').textContent = q.num;
+  document.getElementById('mini-reveal').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+
+  // Update dots
+  for (let i = 0; i < 3; i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    dot.className = 'dot';
+    if (i < idx) dot.classList.add('done');
+    else if (i === idx) dot.classList.add('active');
+  }
+
+  // Build options
+  const optEl = document.getElementById('options');
+  optEl.innerHTML = '';
+  const letters = ['A', 'B', 'C', 'D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}.</span>${opt}`;
+    btn.addEventListener('click', () => selectAnswer(i, idx));
+    optEl.appendChild(btn);
+  });
+}
+
+function selectAnswer(chosen, qIdx) {
+  if (answered) return;
+  answered = true;
+
+  const q = QUESTIONS[qIdx];
+  const options = document.querySelectorAll('.option');
+
+  options.forEach((opt, i) => {
+    opt.classList.add('disabled');
+    if (i === q.correct) opt.classList.add('correct');
+    else if (i === chosen && chosen !== q.correct) opt.classList.add('wrong');
+  });
+
+  // Show mini reveal
+  document.getElementById('reveal-emoji').textContent = q.emoji;
+  document.getElementById('reveal-text').textContent = q.reveal;
+  document.getElementById('reveal-tag').textContent = q.tag;
+  document.getElementById('mini-reveal').style.display = 'block';
+
+  spawnParticles();
+
+  // Show next or finish
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.style.display = 'inline-block';
+  if (qIdx === QUESTIONS.length - 1) {
+    nextBtn.textContent = 'Open your message 💛';
+  } else {
+    nextBtn.textContent = 'Next ✦';
+  }
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= QUESTIONS.length) {
+    // Mark last dot done
+    document.getElementById(`dot-2`).className = 'dot done';
+    showScreen('screen-final');
+    bigBoom();
+  } else {
+    loadQuestion(current);
+  }
+}
+
+function spawnParticles() {
+  const colors = ['#c8526a','#c89a52','#f0e6d8','#e8889a','#d4b06a','#a8e8c0'];
+  for (let i = 0; i < 20; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4 + Math.random() * 6, drift = (Math.random() - 0.5) * 100;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${20+Math.random()*60}vw;top:${30+Math.random()*40}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1+Math.random()*0.7}s;animation-delay:${Math.random()*0.3}s;`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 20);
+  }
+}
+
+function bigBoom() {
+  const colors = ['#c8526a','#c89a52','#f0e6d8','#e8889a','#d4b06a','#a8e8c0','#b088e8'];
+  for (let i = 0; i < 100; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4 + Math.random() * 9, drift = (Math.random() - 0.5) * 160;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${10+Math.random()*80}vw;top:${20+Math.random()*60}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1.2+Math.random()*1}s;animation-delay:${Math.random()*0.8}s;`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 12);
+  }
+}
+</script>
+</body>
+</html>

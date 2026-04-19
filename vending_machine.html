@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SG's Vending Machine 🎰</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400;500&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0612;
+    --machine: #1a1028;
+    --machine-light: #241838;
+    --rose: #d4526e;
+    --gold: #c89a52;
+    --cream: #f0e6d8;
+    --muted: #6b4a6a;
+    --glass: rgba(255,255,255,0.06);
+    --glow-rose: rgba(212,82,110,0.3);
+    --glow-gold: rgba(200,154,82,0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 1.5rem 1rem 3rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(212,82,110,0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(200,154,82,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 0%, rgba(120,80,180,0.08) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 1.5rem; position: relative; z-index: 1; }
+
+  .title {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 700; color: var(--cream); line-height: 1.1;
+  }
+
+  .title span {
+    background: linear-gradient(135deg, var(--rose), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase;
+    margin-top: 0.4rem;
+  }
+
+  /* MAIN LAYOUT */
+  .layout {
+    display: flex; gap: 1.5rem;
+    align-items: flex-start; justify-content: center;
+    flex-wrap: wrap; width: 100%; max-width: 900px;
+    position: relative; z-index: 1;
+  }
+
+  /* VENDING MACHINE */
+  .machine {
+    background: linear-gradient(160deg, #1e1430, #130d22, #0e0818);
+    border: 2px solid rgba(120,80,180,0.3);
+    border-radius: 20px 20px 16px 16px;
+    width: 320px; flex-shrink: 0;
+    box-shadow:
+      0 0 60px rgba(120,80,180,0.12),
+      0 0 120px rgba(212,82,110,0.06),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Machine top bar */
+  .machine-top {
+    background: linear-gradient(135deg, #2a1840, #1a1030);
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid rgba(120,80,180,0.2);
+    text-align: center;
+  }
+
+  .machine-brand {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.3em; text-transform: uppercase;
+    background: linear-gradient(135deg, var(--rose), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; font-weight: 500;
+  }
+
+  .machine-tagline {
+    font-family: 'DM Mono', monospace; font-size: 0.48rem;
+    letter-spacing: 0.2em; color: rgba(255,255,255,0.2);
+    text-transform: uppercase; margin-top: 0.2rem;
+  }
+
+  /* Glass display */
+  .machine-glass {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(120,80,180,0.15);
+    margin: 0.8rem;
+    border-radius: 8px;
+    padding: 0.6rem;
+    min-height: 60px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .display-text {
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 0.12em; color: #88ff88;
+    text-align: center; line-height: 1.5;
+    text-shadow: 0 0 8px rgba(136,255,136,0.5);
+  }
+
+  /* Slots grid */
+  .slots-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 6px; padding: 0 0.8rem 0.8rem;
+  }
+
+  .slot {
+    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 0.5rem 0.3rem;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    min-height: 64px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+  }
+
+  .slot:hover:not(.sold-out):not(.dispensing) {
+    background: linear-gradient(145deg, rgba(212,82,110,0.15), rgba(200,154,82,0.1));
+    border-color: rgba(212,82,110,0.4);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(212,82,110,0.2);
+  }
+
+  .slot.sold-out {
+    opacity: 0.35; cursor: not-allowed;
+  }
+
+  .slot.dispensing {
+    animation: vend 0.6s ease; cursor: default;
+  }
+  @keyframes vend {
+    0%{transform:scale(1)} 30%{transform:scale(0.92)} 60%{transform:scale(1.08)} 100%{transform:scale(1)}
+  }
+
+  .slot.unlocked {
+    background: linear-gradient(145deg, rgba(78,168,122,0.15), rgba(78,168,122,0.05));
+    border-color: rgba(78,168,122,0.4);
+  }
+
+  .slot-code {
+    font-family: 'DM Mono', monospace; font-size: 0.5rem;
+    letter-spacing: 0.1em; color: var(--gold); font-weight: 500;
+  }
+
+  .slot-emoji { font-size: 1.2rem; line-height: 1; }
+
+  .slot-label {
+    font-size: 0.52rem; font-style: italic;
+    color: rgba(240,230,216,0.6); line-height: 1.2;
+    max-width: 60px;
+  }
+
+  .sold-out-tag {
+    position: absolute; top: 3px; right: 3px;
+    font-family: 'DM Mono', monospace; font-size: 0.38rem;
+    letter-spacing: 0.08em; color: var(--rose);
+    text-transform: uppercase; opacity: 0.7;
+  }
+
+  /* Machine bottom */
+  .machine-bottom {
+    background: linear-gradient(135deg, #1a1030, #130d22);
+    border-top: 1px solid rgba(120,80,180,0.2);
+    padding: 0.8rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+
+  .input-row {
+    display: flex; gap: 0.5rem;
+  }
+
+  .code-input {
+    flex: 1; background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(120,80,180,0.3);
+    border-radius: 6px; padding: 0.5rem 0.7rem;
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 0.15em; color: #88ff88;
+    outline: none; text-transform: uppercase;
+  }
+  .code-input::placeholder { color: rgba(136,255,136,0.3); }
+  .code-input:focus { border-color: rgba(212,82,110,0.5); }
+
+  .vend-btn {
+    background: linear-gradient(135deg, rgba(212,82,110,0.3), rgba(200,154,82,0.2));
+    border: 1px solid rgba(212,82,110,0.5);
+    border-radius: 6px; padding: 0.5rem 0.9rem;
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.1em; color: var(--cream);
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+  }
+  .vend-btn:hover { background: linear-gradient(135deg, rgba(212,82,110,0.5), rgba(200,154,82,0.3)); }
+
+  /* Dispensing tray */
+  .tray {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(120,80,180,0.2);
+    border-radius: 4px; min-height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 0.55rem;
+    letter-spacing: 0.1em; color: rgba(255,255,255,0.2);
+  }
+
+  /* OUTPUT PANEL */
+  .output-panel {
+    flex: 1; min-width: 280px; max-width: 420px;
+  }
+
+  .output-card {
+    background: linear-gradient(145deg, rgba(212,82,110,0.06), rgba(200,154,82,0.04));
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px; padding: 2rem 1.8rem;
+    min-height: 300px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+
+  .output-card.active {
+    border-color: rgba(212,82,110,0.3);
+    box-shadow: 0 0 40px rgba(212,82,110,0.1);
+  }
+
+  .output-idle {
+    font-style: italic; font-size: 1rem;
+    color: rgba(240,230,216,0.25); line-height: 1.6;
+  }
+
+  .output-content { display: none; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .output-content.show { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+  @keyframes popIn { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
+
+  .output-code {
+    font-family: 'DM Mono', monospace; font-size: 0.55rem;
+    letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase;
+  }
+
+  .output-emoji { font-size: 3rem; }
+
+  .output-title {
+    font-family: 'Caveat', cursive; font-size: 1.6rem;
+    font-weight: 600; color: var(--cream); line-height: 1.2;
+  }
+
+  .output-text {
+    font-size: 1rem; font-style: italic; line-height: 1.7;
+    color: rgba(240,230,216,0.85);
+  }
+
+  .output-sig {
+    font-family: 'Caveat', cursive; font-size: 1.2rem;
+    color: var(--rose); margin-top: 0.3rem;
+  }
+
+  /* UNLOCK MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: linear-gradient(145deg, #1e1430, #130d22);
+    border: 1px solid rgba(212,82,110,0.3);
+    border-radius: 20px; padding: 2rem;
+    max-width: 340px; width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    animation: popIn 0.3s ease;
+  }
+
+  .modal h3 {
+    font-family: 'Caveat', cursive; font-size: 1.5rem;
+    color: var(--cream); margin-bottom: 0.4rem;
+  }
+
+  .modal p {
+    font-size: 0.85rem; font-style: italic;
+    color: rgba(240,230,216,0.6); margin-bottom: 1rem; line-height: 1.5;
+  }
+
+  .modal input {
+    width: 100%; background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(120,80,180,0.3);
+    border-radius: 8px; padding: 0.7rem 1rem;
+    font-family: 'DM Mono', monospace; font-size: 0.8rem;
+    letter-spacing: 0.15em; color: #88ff88;
+    outline: none; text-align: center; margin-bottom: 0.8rem;
+    text-transform: uppercase;
+  }
+
+  .modal-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem; font-style: italic;
+    padding: 0.6rem 2rem;
+    border: 1px solid rgba(212,82,110,0.4);
+    background: transparent; color: var(--rose);
+    border-radius: 40px; cursor: pointer; transition: all 0.2s;
+    margin: 0 0.3rem;
+  }
+  .modal-btn:hover { background: rgba(212,82,110,0.1); color: var(--cream); }
+  .modal-error {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    color: var(--rose); letter-spacing: 0.1em; margin-top: 0.4rem;
+    display: none;
+  }
+
+  /* PARTICLES */
+  .particle {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    animation: floatUp 1.4s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%{transform:translateY(0) translateX(0) scale(1);opacity:1;}
+    100%{transform:translateY(-160px) translateX(var(--drift)) scale(0);opacity:0;}
+  }
+
+  /* LIGHT STRIP on machine */
+  .light-strip {
+    display: flex; justify-content: center; gap: 6px;
+    padding: 0.4rem; background: rgba(0,0,0,0.3);
+  }
+  .light {
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: blink 1.5s infinite;
+  }
+  .light:nth-child(1){background:#ff4466;animation-delay:0s}
+  .light:nth-child(2){background:#ffaa22;animation-delay:0.2s}
+  .light:nth-child(3){background:#44ff88;animation-delay:0.4s}
+  .light:nth-child(4){background:#4488ff;animation-delay:0.6s}
+  .light:nth-child(5){background:#ff4466;animation-delay:0.8s}
+  .light:nth-child(6){background:#ffaa22;animation-delay:1s}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title"><span>SG's</span> Vending Machine 🎰</div>
+  <div class="subtitle">insert code · get a piece of him · pp edition</div>
+</div>
+
+<div class="layout">
+
+  <!-- VENDING MACHINE -->
+  <div class="machine">
+    <div class="light-strip">
+      <div class="light"></div><div class="light"></div><div class="light"></div>
+      <div class="light"></div><div class="light"></div><div class="light"></div>
+    </div>
+
+    <div class="machine-top">
+      <div class="machine-brand">SG Enterprises ✦ PP Only</div>
+      <div class="machine-tagline">premium feelings · freshly dispensed · est. 2022</div>
+    </div>
+
+    <div class="machine-glass">
+      <div class="display-text" id="display">SELECT A SLOT OR<br>ENTER A CODE BELOW</div>
+    </div>
+
+    <div class="slots-grid" id="slots-grid"></div>
+
+    <div class="machine-bottom">
+      <div class="input-row">
+        <input class="code-input" id="code-input" placeholder="ENTER CODE" maxlength="10" oninput="this.value=this.value.toUpperCase()" />
+        <button class="vend-btn" onclick="vendByCode()">VEND ▶</button>
+      </div>
+      <div class="tray" id="tray">— collection tray —</div>
+    </div>
+  </div>
+
+  <!-- OUTPUT PANEL -->
+  <div class="output-panel">
+    <div class="output-card" id="output-card">
+      <div class="output-idle" id="output-idle">
+        ✦<br><br>
+        Pick a slot from the machine<br>or type a code to see<br>what SG left for you in here<br><br>
+        ✦
+      </div>
+      <div class="output-content" id="output-content">
+        <div class="output-code" id="out-code"></div>
+        <div class="output-emoji" id="out-emoji"></div>
+        <div class="output-title" id="out-title"></div>
+        <div class="output-text" id="out-text"></div>
+        <div class="output-sig" id="out-sig"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- UNLOCK MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3>🔒 Locked Slot</h3>
+    <p>This one needs a secret code. Ask SG if you want in.</p>
+    <input id="modal-input" placeholder="SECRET CODE" maxlength="10" oninput="this.value=this.value.toUpperCase()" />
+    <div>
+      <button class="modal-btn" onclick="tryUnlock()">Unlock</button>
+      <button class="modal-btn" onclick="closeModal()">Cancel</button>
+    </div>
+    <div class="modal-error" id="modal-error">wrong code. try again 😏</div>
+  </div>
+</div>
+
+<script>
+const ITEMS = [
+  {
+    code: "A01", emoji: "💛", label: "a reason",
+    title: "Why I love you",
+    text: "You treat my life like it's yours too. My dreams, my chaos, my ambitions — you carry them alongside your own without being asked. Because of you standing next to me, I'm not just moving forward. I'm moving forward with purpose. You make me want to be someone worth standing next to.",
+    sig: "— SG 💛"
+  },
+  {
+    code: "A02", emoji: "🙏", label: "sorry",
+    title: "I'm sorry for...",
+    text: "Being an ass when I had absolutely no right to be. You never deserved that version of me and I know it. I'm working on it. You make me want to be better, even on the days I'm too stubborn to show it.",
+    sig: "— genuinely sorry, SG 💛"
+  },
+  {
+    code: "A03", emoji: "🌧️", label: "a memory",
+    title: "The swimming pool night",
+    text: "We were standing there in the rain, in front of your swimming pool, and I didn't say anything. I didn't tell you I liked you. I didn't make a move. But I wanted to kiss you so badly that night it was genuinely embarrassing. I just stood there like an idiot in the rain. I think about that night more than I should.",
+    sig: "— the idiot in the rain, SG 💛"
+  },
+  {
+    code: "A04", emoji: "🙏🏽", label: "never told you",
+    title: "Something I've never told you",
+    text: "Because of you I've started believing in Shri Ganesha. I'm not even sure when it happened. But somewhere between everything we've been through together, I started showing up. Maybe it's you. Maybe it's him. Probably both.",
+    sig: "— SG, surprisingly spiritual now 🙏"
+  },
+  {
+    code: "A05", emoji: "😈", label: "a dare",
+    title: "Your dare for today",
+    text: "Act like an absolute obsessed, unhinged fan of mine for 10 minutes. Tell me I'm amazing. Tell me I'm the most interesting person you've ever met. Be completely, embarrassingly, unapologetically all over me. You have 10 minutes. Go. I'm waiting. 😌",
+    sig: "— humbly yours, SG 😭"
+  },
+  {
+    code: "A06", emoji: "🎵", label: "500 miles",
+    title: "500 Miles",
+    text: "I would walk five hundred miles. And I would walk five hundred more. Just to be the man who walked a thousand miles to fall down at your door. That's it. That's the whole thing. That's you and me.",
+    sig: "— SG, your personal Proclaimers 💛"
+  },
+  {
+    code: "A07", emoji: "🤝", label: "a promise",
+    title: "I promise you this",
+    text: "I will never lie to you. I will never hide things from you. Not the small things, not the big things, not the uncomfortable things. You get all of it — the whole unfiltered truth, always. So stfu and trust me. 💛",
+    sig: "— SG, transparently yours"
+  },
+  {
+    code: "A08", emoji: "😏", label: "inside joke",
+    title: "For the record...",
+    text: "I could absolutely go for less than 12. I just don't. You're welcome. Consider this your daily reminder that you're very lucky. 😌",
+    sig: "— SG, generous as always 💀"
+  },
+];
+
+// Secret codes that map to random slots
+const SECRET_CODES = ["BABU","TULIPS","VANILLA","RAINDROP","AADHYAN","OCTOBER","AUGUST","KUCHU"];
+
+// Track which items have been unlocked and which codes used
+let unlockedItems = new Set();
+let usedCodes = new Set();
+
+// Shuffle array helper
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// Pre-assign codes to item indices randomly
+const shuffledIndices = shuffle([0,1,2,3,4,5,6,7]);
+const codeToItemIndex = {};
+SECRET_CODES.forEach((code, i) => {
+  codeToItemIndex[code] = shuffledIndices[i];
+});
+
+// Build slots — all locked initially
+const grid = document.getElementById('slots-grid');
+ITEMS.forEach((item, idx) => {
+  const slot = document.createElement('div');
+  slot.className = 'slot sold-out';
+  slot.id = `slot-${idx}`;
+  slot.innerHTML = `
+    <div class="slot-code">${item.code}</div>
+    <div class="slot-emoji">🔒</div>
+    <div class="slot-label">${item.label}</div>
+    <div class="sold-out-tag">locked</div>
+  `;
+  slot.addEventListener('click', () => {
+    if (!unlockedItems.has(idx)) return;
+    dispenseItem(idx);
+  });
+  grid.appendChild(slot);
+});
+
+function dispenseItem(idx) {
+  const item = ITEMS[idx];
+  const slot = document.getElementById(`slot-${idx}`);
+  if (slot) { slot.classList.add('dispensing'); setTimeout(() => slot.classList.remove('dispensing'), 700); }
+  setDisplay(`DISPENSING ${item.code}...`);
+  document.getElementById('tray').textContent = `✦ ${item.emoji} collected ✦`;
+  setTimeout(() => {
+    showOutput(item);
+    setDisplay(`ENJOY ✦ ${item.code}`);
+    spawnParticles();
+  }, 500);
+}
+
+function vendByCode() {
+  const code = document.getElementById('code-input').value.trim().toUpperCase();
+  document.getElementById('code-input').value = '';
+
+  if (!code) return;
+
+  if (usedCodes.has(code)) {
+    setDisplay('ALREADY USED 😏');
+    document.getElementById('tray').textContent = 'code already redeemed!';
+    return;
+  }
+
+  if (!codeToItemIndex.hasOwnProperty(code)) {
+    setDisplay('INVALID CODE 🤔');
+    document.getElementById('tray').textContent = 'ask SG for the right code!';
+    return;
+  }
+
+  const idx = codeToItemIndex[code];
+  usedCodes.add(code);
+  unlockedItems.add(idx);
+
+  // Unlock the slot visually
+  const slot = document.getElementById(`slot-${idx}`);
+  slot.classList.remove('sold-out');
+  slot.classList.add('unlocked');
+  slot.innerHTML = `
+    <div class="slot-code">${ITEMS[idx].code}</div>
+    <div class="slot-emoji">${ITEMS[idx].emoji}</div>
+    <div class="slot-label">${ITEMS[idx].label}</div>
+  `;
+  slot.addEventListener('click', () => dispenseItem(idx));
+
+  setDisplay(`CODE ACCEPTED ✦\nSLOT ${ITEMS[idx].code} UNLOCKED!`);
+  document.getElementById('tray').textContent = `✦ ${ITEMS[idx].emoji} unlocked — tap to open ✦`;
+
+  // Auto dispense after short delay
+  setTimeout(() => dispenseItem(idx), 800);
+
+  // Check if all unlocked
+  if (usedCodes.size === SECRET_CODES.length) {
+    setTimeout(() => setDisplay('ALL SLOTS UNLOCKED\n✦ SG IS PROUD ✦'), 2000);
+  }
+}
+
+document.getElementById('code-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') vendByCode();
+});
+
+function showOutput(item) {
+  document.getElementById('output-idle').style.display = 'none';
+  const content = document.getElementById('output-content');
+  content.classList.remove('show');
+  void content.offsetWidth;
+  document.getElementById('out-code').textContent = item.code + ' · ' + item.label.toUpperCase();
+  document.getElementById('out-emoji').textContent = item.emoji;
+  document.getElementById('out-title').textContent = item.title;
+  document.getElementById('out-text').textContent = item.text;
+  document.getElementById('out-sig').textContent = item.sig;
+  content.classList.add('show');
+  document.getElementById('output-card').classList.add('active');
+}
+
+function setDisplay(text) {
+  document.getElementById('display').innerHTML = text.replace('\n','<br>');
+}
+
+function spawnParticles() {
+  const colors = ['#d4526e','#c89a52','#f0e6d8','#e8889a','#d4b06a','#a8d8c8'];
+  for (let i = 0; i < 22; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4 + Math.random() * 6, drift = (Math.random() - 0.5) * 100;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${15+Math.random()*70}vw;top:${20+Math.random()*60}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1+Math.random()*0.8}s;animation-delay:${Math.random()*0.3}s;`;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove());
+    }, i * 20);
+  }
+}
+</script>
+</body>
+</html>

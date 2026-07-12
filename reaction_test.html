@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PP's Reaction Test 💛</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0612;
+    --rose: #d4526e;
+    --gold: #c89a52;
+    --cream: #f0e6d8;
+    --muted: #6b4a6a;
+    --green: #4ea87a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 1rem;
+    overflow: hidden;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(212,82,110,0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(200,154,82,0.07) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .screen {
+    display: none; flex-direction: column;
+    align-items: center; text-align: center;
+    position: relative; z-index: 1;
+    max-width: 480px; width: 100%;
+    animation: fadeIn 0.4s ease;
+  }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* INTRO */
+  .intro-title {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 700; margin-bottom: 0.5rem;
+  }
+  .intro-title span {
+    background: linear-gradient(135deg, var(--rose), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .intro-sub {
+    font-size: 1rem; font-style: italic;
+    color: rgba(240,230,216,0.55); margin-bottom: 0.4rem;
+    line-height: 1.6; max-width: 340px;
+  }
+  .intro-note {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  .rounds-info {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.15em; color: var(--gold);
+    margin-bottom: 1.5rem; text-transform: uppercase;
+  }
+
+  /* GAME AREA */
+  #screen-game {
+    width: 100%; max-width: 500px;
+  }
+
+  .hud {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; margin-bottom: 1.2rem;
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase;
+  }
+  .hud-round { color: var(--gold); }
+  .hud-best { color: var(--green); }
+
+  /* THE MAIN TAP ZONE */
+  .tap-zone {
+    width: 100%;
+    min-height: 280px;
+    border-radius: 20px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.15s;
+    border: 2px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .tap-zone.waiting {
+    background: linear-gradient(145deg, rgba(212,82,110,0.06), rgba(200,154,82,0.04));
+    border-color: rgba(255,255,255,0.08);
+    cursor: wait;
+  }
+
+  .tap-zone.ready {
+    background: linear-gradient(145deg, rgba(78,168,122,0.15), rgba(78,168,122,0.08));
+    border-color: rgba(78,168,122,0.5);
+    box-shadow: 0 0 40px rgba(78,168,122,0.15);
+    cursor: pointer;
+    animation: readyPulse 0.3s ease;
+  }
+  @keyframes readyPulse {
+    0%{transform:scale(0.97)} 60%{transform:scale(1.02)} 100%{transform:scale(1)}
+  }
+
+  .tap-zone.too-early {
+    background: linear-gradient(145deg, rgba(212,82,110,0.2), rgba(212,82,110,0.1));
+    border-color: rgba(212,82,110,0.6);
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+  .tap-zone.tapped {
+    background: linear-gradient(145deg, rgba(200,154,82,0.15), rgba(200,154,82,0.08));
+    border-color: rgba(200,154,82,0.5);
+  }
+
+  .zone-emoji { font-size: 3.5rem; margin-bottom: 0.8rem; line-height: 1; }
+  .zone-msg {
+    font-family: 'Caveat', cursive; font-size: 1.5rem; font-weight: 600;
+    line-height: 1.3; max-width: 300px;
+    color: var(--cream);
+  }
+  .zone-sub {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase;
+    margin-top: 0.6rem;
+  }
+  .zone-time {
+    font-family: 'DM Mono', monospace; font-size: 2rem; font-weight: 500;
+    color: var(--gold); margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* RESULTS */
+  .result-list {
+    width: 100%; margin: 1rem 0;
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .result-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.6rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    font-size: 0.85rem; font-style: italic;
+  }
+  .result-item .r-label { color: rgba(240,230,216,0.6); max-width: 260px; text-align: left; }
+  .result-item .r-time {
+    font-family: 'DM Mono', monospace; font-size: 0.75rem; font-style: normal;
+    font-weight: 500; white-space: nowrap;
+    padding: 0.2rem 0.6rem; border-radius: 20px;
+  }
+  .r-time.fast { background: rgba(78,168,122,0.15); color: #7dd4aa; border:1px solid rgba(78,168,122,0.3); }
+  .r-time.ok { background: rgba(200,154,82,0.15); color: var(--gold); border:1px solid rgba(200,154,82,0.3); }
+  .r-time.slow { background: rgba(212,82,110,0.12); color: var(--rose); border:1px solid rgba(212,82,110,0.3); }
+
+  .final-title {
+    font-family: 'Caveat', cursive; font-size: clamp(1.8rem,5vw,2.5rem);
+    font-weight: 700; margin-bottom: 0.3rem; line-height: 1.2;
+  }
+  .final-avg {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .final-verdict {
+    font-size: 1rem; font-style: italic;
+    color: rgba(240,230,216,0.7); line-height: 1.6;
+    max-width: 360px; margin: 0 auto 1.5rem;
+  }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-style: italic;
+    padding: 0.8rem 2.2rem; border: 1px solid rgba(212,82,110,0.45);
+    background: transparent; color: var(--rose); border-radius: 50px;
+    cursor: pointer; transition: all 0.2s; margin-top: 0.5rem;
+  }
+  .btn:hover { background: rgba(212,82,110,0.1); color: var(--cream); transform: translateY(-2px); }
+  .btn.gold { border-color: rgba(200,154,82,0.45); color: var(--gold); }
+  .btn.gold:hover { background: rgba(200,154,82,0.1); }
+
+  /* PARTICLE */
+  .particle { position:fixed; pointer-events:none; border-radius:50%; animation:floatUp 1.4s ease-out forwards; }
+  @keyframes floatUp { 0%{transform:translateY(0) translateX(0) scale(1);opacity:1;} 100%{transform:translateY(-160px) translateX(var(--drift)) scale(0);opacity:0;} }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="intro-title">PP's <span>Reaction Test</span> 💛</div>
+  <div class="intro-sub">SG will flash something on screen. Tap it the moment you see it. 5 rounds. How fast are you?</div>
+  <div class="intro-note">don't tap too early or it resets 😈</div>
+  <div class="rounds-info">5 rounds · tap as fast as you can · from SG with love</div>
+  <button class="btn gold" onclick="startGame()">✦ Start ✦</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="screen-game">
+  <div class="hud">
+    <div class="hud-round" id="hud-round">Round 1 of 5</div>
+    <div class="hud-best" id="hud-best">best: --</div>
+  </div>
+  <div class="tap-zone waiting" id="tap-zone" onclick="onTap()">
+    <div class="zone-emoji" id="zone-emoji">⏳</div>
+    <div class="zone-msg" id="zone-msg">wait for it...</div>
+    <div class="zone-sub" id="zone-sub">don't tap yet 😈</div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="final-title" id="final-title"></div>
+  <div class="final-avg" id="final-avg"></div>
+  <div class="result-list" id="result-list"></div>
+  <div class="final-verdict" id="final-verdict"></div>
+  <button class="btn" onclick="resetGame()">✦ Play Again ✦</button>
+</div>
+
+<script>
+// All 5 rounds — personal notes from SG to PP
+const ROUNDS = [
+  {
+    emoji: "🌧️",
+    msg: "the rain outside your swimming pool that night",
+    sub: "TAP IT",
+    note: "the swimming pool night"
+  },
+  {
+    emoji: "🌷",
+    msg: "tulips. always tulips. you know I remember.",
+    sub: "TAP IT",
+    note: "tulips"
+  },
+  {
+    emoji: "🍷",
+    msg: "22nd October. I could smell the wine.",
+    sub: "TAP IT",
+    note: "22nd october"
+  },
+  {
+    emoji: "🦁",
+    msg: "the zoo. first outing. I was watching you not the animals.",
+    sub: "TAP IT",
+    note: "the zoo date"
+  },
+  {
+    emoji: "💛",
+    msg: "us. always us. tap it before I get too emotional.",
+    sub: "TAP IT",
+    note: "us 💛"
+  },
+];
+
+let currentRound = 0;
+let waitTimeout = null;
+let startTime = null;
+let state = 'idle'; // idle | waiting | ready | tapped | tooearly
+let results = [];
+let bestTime = Infinity;
+
+const VERDICTS = [
+  { max: 180, title: "Okay that's actually insane 😭", verdict: "Under 180ms?? SG is scared of you ngl. That's military level. Go get that IMA commission for real 🫡" },
+  { max: 250, title: "Pretty fast ngl 👀", verdict: "SG approves. You're sharp and don't miss things. Which honestly tracks. Still slower than 50ms tho 😌" },
+  { max: 350, title: "Decent. SG has seen better. 😌", verdict: "Not bad not bad. But my best is 50ms lolll. There's room to improve babu 😭" },
+  { max: 500, title: "What a slow stupid sh*t 😭", verdict: "All you can do is fight and not beat me at anything. My best score is 50ms lolll. Try harder babu 💀" },
+  { max: Infinity, title: "PP are you even awake 💀", verdict: "What a slow stupid sh*t 😭 all you can do is fight and not beat me at anything. My best score is 50ms lolll. Try harder babu 💀 please hydrate also." },
+];
+
+function startGame() {
+  currentRound = 0; results = []; bestTime = Infinity; state = 'idle';
+  showScreen('screen-game');
+  nextRound();
+}
+
+function nextRound() {
+  const round = ROUNDS[currentRound];
+  const zone = document.getElementById('tap-zone');
+  const emoji = document.getElementById('zone-emoji');
+  const msg = document.getElementById('zone-msg');
+  const sub = document.getElementById('zone-sub');
+
+  document.getElementById('hud-round').textContent = `Round ${currentRound+1} of ${ROUNDS.length}`;
+  document.getElementById('hud-best').textContent = bestTime === Infinity ? 'best: --' : `best: ${bestTime}ms`;
+
+  // Reset zone
+  zone.className = 'tap-zone waiting';
+  emoji.textContent = '⏳';
+  msg.textContent = 'wait for it...';
+  sub.textContent = "don't tap yet 😈";
+  state = 'waiting';
+
+  // Random delay 1.2s to 3.8s
+  const delay = 1200 + Math.random() * 2600;
+  waitTimeout = setTimeout(() => {
+    if (state !== 'waiting') return;
+    state = 'ready';
+    startTime = performance.now();
+    zone.className = 'tap-zone ready';
+    emoji.textContent = round.emoji;
+    msg.textContent = round.msg;
+    sub.textContent = round.sub;
+  }, delay);
+}
+
+function onTap() {
+  if (state === 'waiting') {
+    // Too early!
+    clearTimeout(waitTimeout);
+    state = 'tooearly';
+    const zone = document.getElementById('tap-zone');
+    zone.className = 'tap-zone too-early';
+    document.getElementById('zone-emoji').textContent = '😭';
+    document.getElementById('zone-msg').textContent = 'too early!! SG said WAIT.';
+    document.getElementById('zone-sub').textContent = 'restarting this round...';
+    setTimeout(() => { state = 'idle'; nextRound(); }, 1200);
+    return;
+  }
+
+  if (state !== 'ready') return;
+
+  const elapsed = Math.round(performance.now() - startTime);
+  state = 'tapped';
+  results.push({ time: elapsed, round: currentRound });
+  if (elapsed < bestTime) bestTime = elapsed;
+
+  const zone = document.getElementById('tap-zone');
+  zone.className = 'tap-zone tapped';
+  document.getElementById('zone-emoji').textContent = elapsed < 250 ? '🔥' : elapsed < 400 ? '💛' : '😌';
+
+  // Create or update zone-time element
+  let timeEl = document.getElementById('zone-time');
+  if (!timeEl) {
+    timeEl = document.createElement('div');
+    timeEl.className = 'zone-time';
+    timeEl.id = 'zone-time';
+    zone.appendChild(timeEl);
+  }
+  timeEl.textContent = `${elapsed}ms`;
+
+  document.getElementById('zone-msg').textContent = elapsed < 250 ? 'nice reflexes!!' : elapsed < 400 ? 'not bad!' : 'a little slow... 😭';
+  document.getElementById('zone-sub').textContent = ROUNDS[currentRound].note;
+
+  spawnParticles();
+  document.getElementById('hud-best').textContent = `best: ${bestTime}ms`;
+
+  setTimeout(() => {
+    currentRound++;
+    if (currentRound >= ROUNDS.length) {
+      showResults();
+    } else {
+      // Remove zone-time for next round
+      const zt = document.getElementById('zone-time');
+      if (zt) zt.remove();
+      nextRound();
+    }
+  }, 1000);
+}
+
+function showResults() {
+  showScreen('screen-results');
+  const avg = Math.round(results.reduce((a,b) => a+b.time, 0) / results.length);
+  const verdict = VERDICTS.find(v => avg <= v.max);
+
+  document.getElementById('final-title').textContent = verdict.title;
+  document.getElementById('final-avg').textContent = `average: ${avg}ms · best: ${bestTime}ms`;
+  document.getElementById('final-verdict').textContent = verdict.verdict;
+
+  const list = document.getElementById('result-list');
+  list.innerHTML = '';
+  results.forEach((r, i) => {
+    const cls = r.time < 250 ? 'fast' : r.time < 400 ? 'ok' : 'slow';
+    const item = document.createElement('div');
+    item.className = 'result-item';
+    item.innerHTML = `
+      <span class="r-label">${ROUNDS[i].emoji} ${ROUNDS[i].note}</span>
+      <span class="r-time ${cls}">${r.time}ms</span>
+    `;
+    list.appendChild(item);
+  });
+
+  bigBoom();
+}
+
+function resetGame() {
+  showScreen('screen-intro');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function spawnParticles() {
+  const colors = ['#d4526e','#c89a52','#f0e6d8','#e8889a','#d4b06a'];
+  for (let i=0; i<14; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4+Math.random()*6, drift = (Math.random()-0.5)*80;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${20+Math.random()*60}vw;top:${30+Math.random()*40}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1+Math.random()*0.7}s;animation-delay:${Math.random()*0.3}s;`;
+      document.body.appendChild(p); p.addEventListener('animationend', () => p.remove());
+    }, i*20);
+  }
+}
+
+function bigBoom() {
+  const colors = ['#d4526e','#c89a52','#f0e6d8','#e8889a','#d4b06a','#a8d8a8','#b088e8'];
+  for (let i=0; i<60; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 4+Math.random()*8, drift = (Math.random()-0.5)*150;
+      p.style.cssText = `width:${size}px;height:${size}px;left:${10+Math.random()*80}vw;top:${20+Math.random()*60}vh;background:${colors[i%colors.length]};--drift:${drift}px;animation-duration:${1.2+Math.random()}s;animation-delay:${Math.random()*0.6}s;`;
+      document.body.appendChild(p); p.addEventListener('animationend', () => p.remove());
+    }, i*12);
+  }
+}
+</script>
+</body>
+</html>
